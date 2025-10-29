@@ -28,14 +28,14 @@ export const agColumns: ColDef<Product>[] = [
 ];
 
 export const devexpressColumns = [
-  { dataField: "id", caption: "ID", width: 100 },
-  { dataField: "name", caption: "Nazwa produktu" },
+  { dataField: "id", caption: "ID", width: 80, allowEditing: false },
+  { dataField: "name", caption: "Nazwa produktu", allowEditing: true },
+  { dataField: "price", caption: "Cena (PLN)", width: 120, allowEditing: true },
   {
-    dataField: "price",
-    caption: "Cena (PLN)",
-    format: { type: "currency", precision: 2 },
-    width: 140,
+    dataField: "category",
+    caption: "Kategoria",
+    width: 150,
+    allowEditing: true,
   },
-  { dataField: "category", caption: "Kategoria" },
-  { dataField: "description", caption: "Opis" },
+  { dataField: "description", caption: "Opis", allowEditing: true },
 ];

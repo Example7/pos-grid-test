@@ -1,107 +1,50 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import DataGrid, {
   Column,
   Paging,
   Pager,
   SearchPanel,
-  Export as DxExport,
-  Selection,
+  Export,
   Editing,
-  Toolbar,
-  Item,
-  FilterRow,
-  HeaderFilter,
-  Sorting,
 } from "devextreme-react/data-grid";
-
 import "devextreme/dist/css/dx.light.css";
 
-import { generateProducts, type Product } from "@/lib/mockData";
+import { useSupabaseProducts } from "@/hooks/useSupabaseProducts";
 import { devexpressColumns } from "@/lib/productColumn";
+import { updateProduct } from "@/lib/updateProduct";
 
 export default function DevExpressGrid() {
-  const [data, setData] = useState<Product[]>(generateProducts(1000));
+  const { data, loading, error, refetch } = useSupabaseProducts();
 
-  const handleRowUpdated = (e: any) => {
-    const updated = e.data;
-    setData((prev) =>
-      prev.map((row) => (row.id === updated.id ? { ...row, ...updated } : row))
-    );
+  const handleRowUpdated = async (e: any) => {
+    const success = await updateProduct(e.data);
+    if (success) refetch();
+    else alert("Błąd zapisu do bazy");
   };
 
-  const columns = useMemo(() => {
-    return devexpressColumns.map((col) => (
-      <Column
-        key={col.dataField}
-        dataField={col.dataField}
-        caption={col.caption}
-        width={col.width}
-        format={col.format}
-        allowEditing={true}
-      />
-    ));
-  }, []);
+  if (loading) return <p>Ładowanie...</p>;
+  if (error) return <p>Błąd: {error}</p>;
 
   return (
     <div className="p-6">
-      <div
-        className="rounded-md border shadow-sm overflow-hidden"
-        style={{ height: "75vh", width: "100%" }}
+      <DataGrid
+        dataSource={data}
+        showBorders
+        columnAutoWidth
+        onRowUpdated={handleRowUpdated}
       >
-        <DataGrid
-          dataSource={data}
-          showBorders={true}
-          showColumnLines={true}
-          showRowLines={false}
-          rowAlternationEnabled={true}
-          allowColumnReordering={true}
-          allowColumnResizing={true}
-          columnAutoWidth={true}
-          repaintChangesOnly={true}
-          onRowUpdated={handleRowUpdated}
-          height="100%"
-        >
-          <SearchPanel visible={true} highlightCaseSensitive={true} />
-
-          <FilterRow visible={true} />
-          <HeaderFilter visible={true} />
-          <Sorting mode="multiple" />
-
-          <Editing
-            mode="cell"
-            allowUpdating={true}
-            allowAdding={false}
-            allowDeleting={false}
-          />
-
-          <Paging defaultPageSize={20} />
-          <Pager
-            visible={true}
-            showPageSizeSelector={true}
-            allowedPageSizes={[10, 20, 50, 100]}
-            showInfo={true}
-            showNavigationButtons={true}
-          />
-
-          <Toolbar>
-            <Item
-              location="before"
-              widget="dxButton"
-              options={{ icon: "refresh" }}
-            />
-            <Item name="searchPanel" />
-            <Item name="exportButton" />
-          </Toolbar>
-
-          <DxExport enabled={true} allowExportSelectedData={true} />
-
-          <Selection mode="multiple" />
-
-          {columns}
-        </DataGrid>
-      </div>
+        <Editing mode="row" allowUpdating={true} useIcons={true} />
+        <SearchPanel visible highlightCaseSensitive />
+        <Paging defaultPageSize={20} />
+        <Pager
+          showPageSizeSelector
+          allowedPageSizes={[10, 20, 50]}
+          showNavigationButtons
+        />
+        <Export enabled allowExportSelectedData />
+        {devexpressColumns.map((col) => (
+          <Column key={col.dataField} {...col} />
+        ))}
+      </DataGrid>
     </div>
   );
 }
