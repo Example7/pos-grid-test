@@ -78,8 +78,6 @@ export default function DevExpressGrid() {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Tabela DevExpress</h2>
-
       <DataGrid
         dataSource={data}
         keyExpr="id"

@@ -3,21 +3,23 @@
 import {
   AllCommunityModule,
   ModuleRegistry,
+  InfiniteRowModelModule,
+  NumberFilterModule,
+  TextFilterModule,
+  RowSelectionModule,
+  type IDatasource,
+  type IGetRowsParams,
   type ColDef,
+  type GridApi,
+  type GridReadyEvent,
 } from "ag-grid-community";
-import type { GridApi } from "ag-grid-community";
-
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-
-import { useMemo, useRef, useState } from "react";
-import { useSupabaseProducts } from "@/hooks/useSupabaseProducts";
-import { agColumns } from "@/lib/productColumn";
-import { updateProduct } from "@/lib/updateProduct";
+import { useMemo, useRef, useState, useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { addProduct } from "@/lib/addProduct";
 import { deleteProduct } from "@/lib/deleteProduct";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-
+import type { Product } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,44 +31,77 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([
+  AllCommunityModule,
+  InfiniteRowModelModule,
+  NumberFilterModule,
+  TextFilterModule,
+  RowSelectionModule,
+]);
+
+type TextFilter = {
+  filterType: "text";
+  type: "contains" | "equals" | "startsWith" | "endsWith";
+  filter: string;
+};
+
+type NumberFilter = {
+  filterType: "number";
+  type: "equals" | "lessThan" | "greaterThan";
+  filter: number;
+};
 
 export default function AgGridView() {
-  const {
-    data: rowData,
-    loading,
-    error,
-    progress,
-    refetch,
-  } = useSupabaseProducts();
-
-  const gridRef = useRef<AgGridReact>(null);
-  const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const [quickFilter, setQuickFilter] = useState("");
+  const gridRef = useRef<AgGridReact<Product>>(null);
+  const [gridApi, setGridApi] = useState<GridApi<Product> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    price: 0,
-    category: "",
-    description: "",
-  });
+  const [form, setForm] = useState<Partial<Product>>({});
 
-  const columnDefs = useMemo<ColDef[]>(() => {
-    return agColumns.map((col) => ({
-      ...col,
-      editable: col.field !== "id",
-      onCellValueChanged: async (params) => {
-        const success = await updateProduct(params.data);
-        if (success) refetch();
-        else alert("Błąd zapisu do bazy");
+  const columnDefs = useMemo<ColDef<Product>[]>(
+    () => [
+      { field: "id", headerName: "ID", maxWidth: 100 },
+      {
+        field: "name",
+        headerName: "Nazwa",
+        filter: "agTextColumnFilter",
+        floatingFilter: true,
+        editable: true,
       },
-    }));
-  }, [refetch]);
+      {
+        field: "category",
+        headerName: "Kategoria",
+        filter: "agTextColumnFilter",
+        floatingFilter: true,
+        editable: true,
+      },
+      {
+        field: "price",
+        headerName: "Cena",
+        filter: "agNumberColumnFilter",
+        floatingFilter: true,
+        editable: true,
+      },
+      {
+        field: "stock",
+        headerName: "Stan",
+        filter: "agNumberColumnFilter",
+        floatingFilter: true,
+        editable: true,
+      },
+      {
+        field: "supplier",
+        headerName: "Dostawca",
+        filter: "agTextColumnFilter",
+        floatingFilter: true,
+        editable: true,
+      },
+    ],
+    []
+  );
 
   const defaultColDef = useMemo<ColDef>(
     () => ({
       sortable: true,
-      filter: true,
       resizable: true,
       flex: 1,
       minWidth: 120,
@@ -74,36 +109,71 @@ export default function AgGridView() {
     []
   );
 
+  const createDatasource = useCallback(
+    (): IDatasource => ({
+      getRows: async (params: IGetRowsParams) => {
+        try {
+          const { startRow, endRow, sortModel, filterModel } = params;
+          let query = supabase
+            .from("products")
+            .select("*", { count: "exact" })
+            .range(startRow, endRow - 1);
+
+          if (sortModel && sortModel.length > 0) {
+            const sort = sortModel[0];
+            query = query.order(sort.colId, { ascending: sort.sort === "asc" });
+          }
+
+          for (const [key, filter] of Object.entries(filterModel)) {
+            const f = filter as TextFilter | NumberFilter;
+            if (f.filterType === "text") {
+              if (f.type === "contains")
+                query = query.ilike(key, `%${f.filter}%`);
+              else if (f.type === "equals") query = query.eq(key, f.filter);
+              else if (f.type === "startsWith")
+                query = query.ilike(key, `${f.filter}%`);
+              else if (f.type === "endsWith")
+                query = query.ilike(key, `%${f.filter}`);
+            } else if (f.filterType === "number") {
+              if (f.type === "equals") query = query.eq(key, f.filter);
+              else if (f.type === "lessThan") query = query.lt(key, f.filter);
+              else if (f.type === "greaterThan")
+                query = query.gt(key, f.filter);
+            }
+          }
+
+          const { data, count, error } = await query;
+          if (error) throw error;
+          params.successCallback(data ?? [], count ?? 0);
+        } catch (err) {
+          console.error("Błąd pobierania danych:", err);
+          params.failCallback();
+        }
+      },
+    }),
+    []
+  );
+
+  const onGridReady = (params: GridReadyEvent<Product>) => {
+    setGridApi(params.api);
+    params.api.setGridOption("datasource", createDatasource());
+  };
+
   const handleAddProduct = async () => {
-    if (!form.name || !form.category) {
-      alert("Uzupełnij nazwę i kategorię produktu!");
+    if (!form.name || !form.price || !form.category) {
+      alert("Uzupełnij nazwę, kategorię i cenę produktu!");
       return;
     }
-
-    try {
-      await addProduct({
-        name: form.name,
-        price: Number(form.price),
-        category: form.category,
-        description: form.description,
-        sku: crypto.randomUUID(),
-        stock: 100,
-        warehouse: "Nowy Sącz",
-        brand: "Generic",
-        supplier: "Default Supplier",
-        discount: 0,
-        rating: 0,
-        active: true,
-        color: "czarny",
-        size: "M",
-      });
-      refetch();
-      setIsDialogOpen(false);
-      setForm({ name: "", price: 0, category: "", description: "" });
-    } catch (err) {
-      console.error(err);
-      alert("Błąd dodawania produktu");
-    }
+    await addProduct({
+      ...form,
+      sku: crypto.randomUUID(),
+      price: Number(form.price),
+      stock: Number(form.stock ?? 0),
+      active: true,
+    });
+    setIsDialogOpen(false);
+    gridApi?.refreshInfiniteCache();
+    setForm({});
   };
 
   const handleDeleteSelected = async () => {
@@ -115,40 +185,14 @@ export default function AgGridView() {
     }
     if (!confirm(`Na pewno usunąć ${selected.length} produktów?`)) return;
 
-    for (const row of selected) {
-      await deleteProduct(row.id);
-    }
-
-    refetch();
+    for (const row of selected) await deleteProduct(row.id);
+    gridApi.refreshInfiniteCache();
   };
-
-  if (loading)
-    return (
-      <LoadingSpinner text="Wczytywanie produktów..." progress={progress} />
-    );
-
-  if (error)
-    return (
-      <p className="text-red-600 text-center font-medium p-6">
-        Błąd podczas ładowania danych: {error}
-      </p>
-    );
 
   return (
     <div className="p-6">
       <div className="flex justify-between mb-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Szukaj..."
-            value={quickFilter}
-            onChange={(e) => {
-              setQuickFilter(e.target.value);
-              gridApi?.setGridOption("quickFilterText", e.target.value);
-            }}
-            className="w-64"
-          />
-          <Button onClick={() => gridApi?.setFilterModel(null)}>Resetuj</Button>
-        </div>
+        <div></div>
         <div className="flex gap-2">
           <Button onClick={() => setIsDialogOpen(true)}>+ Dodaj produkt</Button>
           <Button variant="destructive" onClick={handleDeleteSelected}>
@@ -158,63 +202,50 @@ export default function AgGridView() {
       </div>
 
       <div
-        className="ag-theme-quartz rounded-lg border shadow-sm"
+        className="ag-theme-quartz rounded-lg border shadow-sm bg-white"
         style={{ height: "75vh", width: "100%" }}
       >
-        <AgGridReact
+        <AgGridReact<Product>
           ref={gridRef}
-          onGridReady={(params) => setGridApi(params.api)}
-          rowData={rowData}
+          onGridReady={onGridReady}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
+          rowModelType="infinite"
+          cacheBlockSize={20}
           pagination
           paginationPageSize={20}
-          rowSelection="multiple"
+          rowSelection={{
+            mode: "multiRow",
+            checkboxes: true,
+          }}
           animateRows
-          suppressRowClickSelection
-          quickFilterText={quickFilter}
         />
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Dodaj nowy produkt</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 py-2">
-            <div>
-              <Label>Nazwa</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Cena (PLN)</Label>
-              <Input
-                type="number"
-                value={form.price}
-                onChange={(e) =>
-                  setForm({ ...form, price: Number(e.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <Label>Kategoria</Label>
-              <Input
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Opis</Label>
-              <Input
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-              />
-            </div>
+
+          <div className="grid grid-cols-2 gap-4 py-2">
+            {["name", "category", "price", "stock", "supplier"].map((key) => (
+              <div key={key}>
+                <Label>{key}</Label>
+                <Input
+                  type={["price", "stock"].includes(key) ? "number" : "text"}
+                  value={String(form[key as keyof Product] ?? "")}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      [key]: ["price", "stock"].includes(key)
+                        ? Number(e.target.value)
+                        : e.target.value,
+                    })
+                  }
+                />
+              </div>
+            ))}
           </div>
 
           <DialogFooter>
