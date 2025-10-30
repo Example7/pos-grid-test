@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  DataGrid,
-  GridRowEditStopReasons,
-  type GridEventListener,
-  type GridRowModel,
-} from "@mui/x-data-grid";
+import { DataGrid, type GridRowModel } from "@mui/x-data-grid";
 import {
   Box,
   Button,
@@ -17,12 +12,15 @@ import {
   TextField,
 } from "@mui/material";
 import { muiColumns } from "@/lib/productColumn";
-import { useSupabaseProducts } from "@/hooks/useSupabaseProducts";
 import { supabase } from "@/lib/supabaseClient";
+import { addProduct } from "@/lib/addProduct";
 import type { Product } from "@/lib/mockData";
 
 export default function MuiGridView() {
-  const { data: rows, loading, error, refetch } = useSupabaseProducts();
+  const [rows, setRows] = React.useState<Product[]>([]);
+  const [rowCount, setRowCount] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const [paginationModel, setPaginationModel] = React.useState({
     pageSize: 10,
@@ -31,22 +29,44 @@ export default function MuiGridView() {
 
   const [selection, setSelection] = React.useState<number[]>([]);
   const [openAdd, setOpenAdd] = React.useState(false);
-  const [newProduct, setNewProduct] = React.useState<Partial<Product>>({
-    name: "",
-    price: 0,
-    category: "",
-    description: "",
-  });
+  const [newProduct, setNewProduct] = React.useState<Partial<Product>>({});
   const [filter, setFilter] = React.useState("");
 
-  const handleRowEditStop: GridEventListener<"rowEditStop"> = (
-    params,
-    event
-  ) => {
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true;
+  const excludedFields = ["id", "created_at", "updated_at"];
+
+  const fetchPage = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const { page, pageSize } = paginationModel;
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
+      let query = supabase
+        .from("products")
+        .select("*", { count: "exact" })
+        .order("id", { ascending: true })
+        .range(from, to);
+
+      if (filter) query = query.ilike("name", `%${filter}%`);
+
+      const { data, count, error } = await query;
+
+      if (error) throw error;
+
+      setRows(data ?? []);
+      setRowCount(count ?? 0);
+      setError(null);
+    } catch (err) {
+      console.error("Błąd pobierania danych:", err);
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [paginationModel, filter]);
+
+  React.useEffect(() => {
+    fetchPage();
+  }, [fetchPage]);
 
   const handleProcessRowUpdate = async (newRow: GridRowModel<Product>) => {
     const updatedRow = newRow as Product;
@@ -66,25 +86,24 @@ export default function MuiGridView() {
       return newRow;
     }
 
-    refetch();
+    fetchPage();
     return updatedRow;
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.category) {
-      alert("Uzupełnij nazwę i kategorię produktu");
-      return;
-    }
+    try {
+      if (Object.keys(newProduct).length === 0) {
+        alert("Uzupełnij dane produktu");
+        return;
+      }
 
-    const { error } = await supabase.from("products").insert([newProduct]);
-
-    if (error) {
-      console.error("Błąd dodawania:", error.message);
-      alert("Błąd dodawania produktu");
-    } else {
+      await addProduct(newProduct);
       setOpenAdd(false);
-      setNewProduct({ name: "", price: 0, category: "", description: "" });
-      refetch();
+      setNewProduct({});
+      fetchPage();
+    } catch (error) {
+      console.error("Błąd dodawania produktu:", (error as Error).message);
+      alert("Nie udało się dodać produktu");
     }
   };
 
@@ -105,16 +124,12 @@ export default function MuiGridView() {
       console.error("Błąd usuwania:", error.message);
       alert("Błąd usuwania produktów");
     } else {
-      refetch();
+      alert("Usunięto zaznaczone produkty.");
+      fetchPage();
       setSelection([]);
     }
   };
 
-  const filteredRows = rows.filter((r) =>
-    r.name.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  if (loading) return <p>Ładowanie danych...</p>;
   if (error) return <p>Błąd: {error}</p>;
 
   return (
@@ -133,6 +148,7 @@ export default function MuiGridView() {
           size="small"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && fetchPage()}
           sx={{ width: 250 }}
         />
         <Box>
@@ -165,34 +181,41 @@ export default function MuiGridView() {
         }}
       >
         <DataGrid
-          rows={filteredRows}
+          rows={rows}
+          rowCount={rowCount}
           columns={muiColumns}
           getRowId={(row) => row.id}
+          loading={loading}
           pagination
+          paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[10, 25, 50, 100]}
           editMode="row"
-          onRowEditStop={handleRowEditStop}
           processRowUpdate={handleProcessRowUpdate}
           checkboxSelection
-          onRowSelectionModelChange={(newSelectionModel) => {
-            const ids = Array.isArray(newSelectionModel)
-              ? (newSelectionModel as (string | number)[]).map((id) =>
-                  Number(id)
-                )
-              : [];
-            setSelection(ids);
-          }}
           disableRowSelectionOnClick
-          sx={{
-            border: "none",
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: "#f3f4f6",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-cell": { fontSize: "0.95rem" },
-            "& .MuiDataGrid-row:hover": { backgroundColor: "#f9fafb" },
+          onRowSelectionModelChange={(newSelectionModel) => {
+            if (Array.isArray(newSelectionModel)) {
+              setSelection(newSelectionModel.map((id) => Number(id)));
+            } else if (
+              typeof newSelectionModel === "object" &&
+              newSelectionModel !== null &&
+              "ids" in newSelectionModel &&
+              newSelectionModel.ids instanceof Set
+            ) {
+              const idsArray = Array.from(newSelectionModel.ids) as (
+                | string
+                | number
+              )[];
+              setSelection(idsArray.map((id) => Number(id)));
+            } else {
+              console.warn(
+                "Nieoczekiwany typ selectionModel:",
+                newSelectionModel
+              );
+              setSelection([]);
+            }
           }}
         />
       </div>
@@ -202,35 +225,33 @@ export default function MuiGridView() {
         <DialogContent
           sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
         >
-          <TextField
-            label="Nazwa"
-            value={newProduct.name}
-            onChange={(e) =>
-              setNewProduct({ ...newProduct, name: e.target.value })
-            }
-          />
-          <TextField
-            label="Cena"
-            type="number"
-            value={newProduct.price}
-            onChange={(e) =>
-              setNewProduct({ ...newProduct, price: Number(e.target.value) })
-            }
-          />
-          <TextField
-            label="Kategoria"
-            value={newProduct.category}
-            onChange={(e) =>
-              setNewProduct({ ...newProduct, category: e.target.value })
-            }
-          />
-          <TextField
-            label="Opis"
-            value={newProduct.description}
-            onChange={(e) =>
-              setNewProduct({ ...newProduct, description: e.target.value })
-            }
-          />
+          {Object.keys(rows[0] ?? {})
+            .filter((key) => !excludedFields.includes(key))
+            .map((key) => (
+              <TextField
+                key={key}
+                label={key.charAt(0).toUpperCase() + key.slice(1)}
+                value={String(newProduct[key as keyof Product] ?? "")}
+                onChange={(e) =>
+                  setNewProduct((prev) => ({
+                    ...prev,
+                    [key]:
+                      key.toLowerCase().includes("price") ||
+                      key.toLowerCase().includes("amount") ||
+                      key.toLowerCase().includes("ilosc")
+                        ? Number(e.target.value)
+                        : e.target.value,
+                  }))
+                }
+                type={
+                  key.toLowerCase().includes("price") ||
+                  key.toLowerCase().includes("amount") ||
+                  key.toLowerCase().includes("ilosc")
+                    ? "number"
+                    : "text"
+                }
+              />
+            ))}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenAdd(false)}>Anuluj</Button>

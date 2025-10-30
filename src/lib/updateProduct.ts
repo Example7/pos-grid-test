@@ -2,19 +2,21 @@ import { supabase } from "./supabaseClient";
 import type { Product } from "./mockData";
 
 export async function updateProduct(updatedRow: Product): Promise<boolean> {
+  const { id, ...dataToUpdate } = updatedRow;
+
   const { error } = await supabase
     .from("products")
     .update({
-      name: updatedRow.name,
-      price: updatedRow.price,
-      category: updatedRow.category,
-      description: updatedRow.description,
+      ...dataToUpdate,
+      updated_at: new Date().toISOString(),
     })
-    .eq("id", updatedRow.id);
+    .eq("id", id);
 
   if (error) {
-    console.error("Błąd zapisu:", error.message);
+    console.error("Błąd aktualizacji produktu:", error.message);
     return false;
   }
+
+  console.log("Zaktualizowano produkt:", id);
   return true;
 }

@@ -3,16 +3,17 @@ export type Product = {
   name: string;
   price: number;
   category: string;
-  description: string;
+  description: string | null;
+  sku: string;
+  stock: number;
+  warehouse: string;
+  brand: string;
+  supplier: string;
+  created_at: string | null;
+  updated_at: string | null;
+  discount: number | null;
+  rating: number | null;
+  active: boolean | null;
+  color: string | null;
+  size: string | null;
 };
-
-export function generateProducts(count: number = 1000): Product[] {
-  const categories = ["RTV", "AGD", "Sport", "Odzież"];
-  return Array.from({ length: count }).map((_, i) => ({
-    id: i + 1,
-    name: `Produkt ${i + 1}`,
-    price: Math.floor(Math.random() * 1000),
-    category: categories[i % categories.length],
-    description: `Opis produktu ${i + 1}`,
-  }));
-}

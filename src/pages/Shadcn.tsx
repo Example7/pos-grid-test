@@ -9,6 +9,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
+
 import {
   Table,
   TableHeader,
@@ -41,9 +42,11 @@ import { addProduct } from "@/lib/addProduct";
 import { updateProduct } from "@/lib/updateProduct";
 import { deleteProduct } from "@/lib/deleteProduct";
 import type { Product } from "@/lib/mockData";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function ShadcnTable() {
-  const { data, loading, error, refetch } = useSupabaseProducts();
+  const { data, loading, error, refetch, progress } = useSupabaseProducts();
+
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<Partial<Product>>({});
   const [isNew, setIsNew] = useState(false);
@@ -52,9 +55,18 @@ export default function ShadcnTable() {
   const columns: ColumnDef<Product>[] = useMemo(
     () => [
       { accessorKey: "id", header: "ID" },
-      { accessorKey: "name", header: "Nazwa produktu" },
+      { accessorKey: "name", header: "Nazwa" },
       { accessorKey: "price", header: "Cena (PLN)" },
       { accessorKey: "category", header: "Kategoria" },
+      { accessorKey: "brand", header: "Marka" },
+      { accessorKey: "supplier", header: "Dostawca" },
+      { accessorKey: "warehouse", header: "Magazyn" },
+      { accessorKey: "color", header: "Kolor" },
+      { accessorKey: "size", header: "Rozmiar" },
+      { accessorKey: "stock", header: "Stan" },
+      { accessorKey: "discount", header: "Rabat (%)" },
+      { accessorKey: "rating", header: "Ocena" },
+      { accessorKey: "active", header: "Aktywny" },
       { accessorKey: "description", header: "Opis" },
       {
         id: "actions",
@@ -78,6 +90,7 @@ export default function ShadcnTable() {
               onClick={async () => {
                 if (confirm(`Na pewno usunąć "${row.original.name}"?`)) {
                   await deleteProduct(row.original.id);
+                  refetch();
                 }
               }}
             >
@@ -87,7 +100,7 @@ export default function ShadcnTable() {
         ),
       },
     ],
-    []
+    [refetch]
   );
 
   const table = useReactTable({
@@ -100,8 +113,17 @@ export default function ShadcnTable() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  if (loading) return <p>Ładowanie...</p>;
-  if (error) return <p>Błąd: {error}</p>;
+  if (loading)
+    return (
+      <LoadingSpinner text="Wczytywanie produktów..." progress={progress} />
+    );
+
+  if (error)
+    return (
+      <p className="text-red-600 font-medium p-6">
+        Błąd podczas ładowania danych: {error}
+      </p>
+    );
 
   const handleSave = async () => {
     if (!form.name || !form.category) {
@@ -115,6 +137,16 @@ export default function ShadcnTable() {
         price: form.price ?? 0,
         category: form.category!,
         description: form.description ?? "",
+        sku: crypto.randomUUID(),
+        stock: form.stock ?? 100,
+        warehouse: form.warehouse ?? "Nowy Sącz",
+        brand: form.brand ?? "Generic",
+        supplier: form.supplier ?? "Default Supplier",
+        discount: form.discount ?? 0,
+        rating: form.rating ?? 0,
+        active: form.active ?? true,
+        color: form.color ?? "czarny",
+        size: form.size ?? "M",
       });
     } else if (editing) {
       const updated = { ...editing, ...form } as Product;
@@ -130,7 +162,8 @@ export default function ShadcnTable() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Tabela Shadcn (Supabase)</h2>
+        <h2 className="text-xl font-semibold">Tabela produktów (Shadcn)</h2>
+
         <div className="flex gap-2">
           <Input
             placeholder="Szukaj..."
@@ -138,6 +171,7 @@ export default function ShadcnTable() {
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="w-64"
           />
+
           <Button
             onClick={() => {
               setIsNew(true);
@@ -156,7 +190,7 @@ export default function ShadcnTable() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="whitespace-nowrap">
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -166,11 +200,15 @@ export default function ShadcnTable() {
               </TableRow>
             ))}
           </TableHeader>
+
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} className="hover:bg-muted/40">
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className="align-top max-w-[200px] text-sm"
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -182,18 +220,18 @@ export default function ShadcnTable() {
 
       <div className="flex justify-center mt-6">
         <Pagination>
-          <PaginationContent className="flex items-center gap-1">
+          <PaginationContent className="flex items-center gap-2">
             <PaginationItem>
               <PaginationPrevious
                 onClick={() =>
                   table.getCanPreviousPage() ? table.previousPage() : undefined
                 }
                 aria-disabled={!table.getCanPreviousPage()}
-                className={`${
+                className={
                   !table.getCanPreviousPage()
                     ? "opacity-50 pointer-events-none"
                     : ""
-                }`}
+                }
               />
             </PaginationItem>
 
@@ -234,11 +272,11 @@ export default function ShadcnTable() {
                   table.getCanNextPage() ? table.nextPage() : undefined
                 }
                 aria-disabled={!table.getCanNextPage()}
-                className={`${
+                className={
                   !table.getCanNextPage()
                     ? "opacity-50 pointer-events-none"
                     : ""
-                }`}
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -246,46 +284,70 @@ export default function ShadcnTable() {
       </div>
 
       <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              {isNew ? "Dodaj nowy produkt" : "Edytuj produkt"}
+              {isNew ? "Dodaj produkt" : "Edytuj produkt"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-4 py-2">
-            <div>
-              <Label>Nazwa</Label>
-              <Input
-                value={form.name ?? ""}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+          <div className="grid grid-cols-2 gap-4 py-2">
+            {Object.entries({
+              name: "Nazwa",
+              price: "Cena (PLN)",
+              category: "Kategoria",
+              description: "Opis",
+              brand: "Marka",
+              supplier: "Dostawca",
+              warehouse: "Magazyn",
+              color: "Kolor",
+              size: "Rozmiar",
+              stock: "Stan",
+              discount: "Rabat (%)",
+              rating: "Ocena (0–5)",
+            }).map(([key, label]) => {
+              const field = key as keyof Product;
+              return (
+                <div key={key}>
+                  <Label>{label}</Label>
+                  <Input
+                    type={
+                      ["price", "stock", "discount", "rating"].includes(key)
+                        ? "number"
+                        : "text"
+                    }
+                    value={
+                      typeof form[field] === "boolean"
+                        ? form[field]
+                          ? "true"
+                          : "false"
+                        : form[field] ?? ""
+                    }
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [field]: [
+                          "price",
+                          "stock",
+                          "discount",
+                          "rating",
+                        ].includes(key)
+                          ? Number(e.target.value)
+                          : e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              );
+            })}
+
+            <div className="flex items-center gap-2 mt-4">
+              <input
+                type="checkbox"
+                checked={form.active ?? true}
+                onChange={(e) => setForm({ ...form, active: e.target.checked })}
               />
-            </div>
-            <div>
-              <Label>Cena</Label>
-              <Input
-                type="number"
-                value={form.price ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, price: Number(e.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <Label>Kategoria</Label>
-              <Input
-                value={form.category ?? ""}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Opis</Label>
-              <Input
-                value={form.description ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-              />
+              <Label>Aktywny</Label>
             </div>
           </div>
 
