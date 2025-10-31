@@ -11,6 +11,7 @@ import {
   type IGetRowsParams,
   type GridApi,
   type GridReadyEvent,
+  type CellValueChangedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -177,6 +178,28 @@ export default function AgGridView() {
     gridApi.refreshInfiniteCache();
   };
 
+  const handleCellValueChanged = async (
+    event: CellValueChangedEvent<Product>
+  ) => {
+    const { data, colDef, newValue, oldValue } = event;
+
+    if (newValue === oldValue) return;
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({ [colDef.field!]: newValue })
+        .eq("id", data.id);
+
+      if (error) throw error;
+
+      console.log(`Zmieniono ${colDef.field} dla produktu ${data.id}`);
+    } catch (err) {
+      console.error("Błąd podczas aktualizacji:", err);
+      alert("Nie udało się zapisać zmian w bazie.");
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between mb-4">
@@ -207,6 +230,7 @@ export default function AgGridView() {
             checkboxes: true,
           }}
           animateRows
+          onCellValueChanged={handleCellValueChanged}
         />
       </div>
 
