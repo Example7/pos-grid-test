@@ -11,7 +11,6 @@ type BaseColumn = {
   flex?: number;
 };
 
-// 🔹 Wszystkie kolumny z bazy danych products
 export const productColumnsBase: BaseColumn[] = [
   { key: "id", label: "ID", editable: false, width: 80 },
   { key: "name", label: "Nazwa produktu", editable: true, flex: 1 },
@@ -55,6 +54,10 @@ export const agColumns: ColDef<Product>[] = productColumnsBase.map((col) => ({
   width: col.width,
   flex: col.flex,
   editable: col.editable ?? false,
+  filter: ["price", "stock", "discount", "rating"].includes(col.key)
+    ? "agNumberColumnFilter"
+    : "agTextColumnFilter",
+  floatingFilter: true,
 }));
 
 export const devexpressColumns = productColumnsBase.map((col) => ({

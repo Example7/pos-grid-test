@@ -44,10 +44,11 @@ export default function MuiGridView() {
       let query = supabase
         .from("products")
         .select("*", { count: "exact" })
-        .order("id", { ascending: true })
-        .range(from, to);
+        .order("id", { ascending: true });
 
       if (filter) query = query.ilike("name", `%${filter}%`);
+
+      query = query.range(from, to);
 
       const { data, count, error } = await query;
 

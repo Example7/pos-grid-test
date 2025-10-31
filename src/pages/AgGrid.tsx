@@ -9,7 +9,6 @@ import {
   RowSelectionModule,
   type IDatasource,
   type IGetRowsParams,
-  type ColDef,
   type GridApi,
   type GridReadyEvent,
 } from "ag-grid-community";
@@ -20,6 +19,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { addProduct } from "@/lib/addProduct";
 import { deleteProduct } from "@/lib/deleteProduct";
 import type { Product } from "@/lib/mockData";
+import { agColumns } from "@/lib/productColumn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,8 +47,15 @@ type TextFilter = {
 
 type NumberFilter = {
   filterType: "number";
-  type: "equals" | "lessThan" | "greaterThan";
+  type:
+    | "equals"
+    | "lessThan"
+    | "lessThanOrEqual"
+    | "greaterThan"
+    | "greaterThanOrEqual"
+    | "inRange";
   filter: number;
+  filterTo?: number;
 };
 
 export default function AgGridView() {
@@ -57,54 +64,12 @@ export default function AgGridView() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState<Partial<Product>>({});
 
-  const columnDefs = useMemo<ColDef<Product>[]>(
-    () => [
-      { field: "id", headerName: "ID", maxWidth: 100 },
-      {
-        field: "name",
-        headerName: "Nazwa",
-        filter: "agTextColumnFilter",
-        floatingFilter: true,
-        editable: true,
-      },
-      {
-        field: "category",
-        headerName: "Kategoria",
-        filter: "agTextColumnFilter",
-        floatingFilter: true,
-        editable: true,
-      },
-      {
-        field: "price",
-        headerName: "Cena",
-        filter: "agNumberColumnFilter",
-        floatingFilter: true,
-        editable: true,
-      },
-      {
-        field: "stock",
-        headerName: "Stan",
-        filter: "agNumberColumnFilter",
-        floatingFilter: true,
-        editable: true,
-      },
-      {
-        field: "supplier",
-        headerName: "Dostawca",
-        filter: "agTextColumnFilter",
-        floatingFilter: true,
-        editable: true,
-      },
-    ],
-    []
-  );
-
-  const defaultColDef = useMemo<ColDef>(
+  const defaultColDef = useMemo(
     () => ({
       sortable: true,
       resizable: true,
       flex: 1,
-      minWidth: 120,
+      minWidth: 140,
     }),
     []
   );
@@ -124,8 +89,14 @@ export default function AgGridView() {
             query = query.order(sort.colId, { ascending: sort.sort === "asc" });
           }
 
+          const numericColumns = ["id", "price", "stock"];
+
           for (const [key, filter] of Object.entries(filterModel)) {
             const f = filter as TextFilter | NumberFilter;
+
+            if (numericColumns.includes(key) && f.filterType === "text")
+              continue;
+
             if (f.filterType === "text") {
               if (f.type === "contains")
                 query = query.ilike(key, `%${f.filter}%`);
@@ -135,10 +106,27 @@ export default function AgGridView() {
               else if (f.type === "endsWith")
                 query = query.ilike(key, `%${f.filter}`);
             } else if (f.filterType === "number") {
-              if (f.type === "equals") query = query.eq(key, f.filter);
-              else if (f.type === "lessThan") query = query.lt(key, f.filter);
-              else if (f.type === "greaterThan")
-                query = query.gt(key, f.filter);
+              switch (f.type) {
+                case "equals":
+                  query = query.eq(key, f.filter);
+                  break;
+                case "lessThan":
+                  query = query.lt(key, f.filter);
+                  break;
+                case "lessThanOrEqual":
+                  query = query.lte(key, f.filter);
+                  break;
+                case "greaterThan":
+                  query = query.gt(key, f.filter);
+                  break;
+                case "greaterThanOrEqual":
+                  query = query.gte(key, f.filter);
+                  break;
+                case "inRange":
+                  if (f.filterTo !== undefined)
+                    query = query.gte(key, f.filter).lte(key, f.filterTo);
+                  break;
+              }
             }
           }
 
@@ -208,7 +196,7 @@ export default function AgGridView() {
         <AgGridReact<Product>
           ref={gridRef}
           onGridReady={onGridReady}
-          columnDefs={columnDefs}
+          columnDefs={agColumns}
           defaultColDef={defaultColDef}
           rowModelType="infinite"
           cacheBlockSize={20}
