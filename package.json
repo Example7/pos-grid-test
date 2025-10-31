@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "devextreme": "^25.1.6",
+    "devextreme-aspnet-data-nojquery": "^5.1.0",
     "devextreme-react": "^25.1.6",
     "lucide-react": "^0.548.0",
     "react": "^19.2.0",

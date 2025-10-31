@@ -12,186 +12,210 @@ import DataGrid, {
   FilterPanel,
   FilterBuilderPopup,
 } from "devextreme-react/data-grid";
-import type { LoadOptions, SortDescriptor } from "devextreme/data";
+import CustomStore from "devextreme/data/custom_store";
 import "devextreme/dist/css/dx.material.blue.light.css";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { devexpressColumns } from "@/lib/productColumn";
-import type { Product } from "@/lib/mockData";
-import CustomStore from "devextreme/data/custom_store";
-
-type SimpleFilter =
-  | [
-      keyof Product,
-      "=" | "<" | ">" | "<=" | ">=" | "contains",
-      string | number | boolean
-    ]
-  | [SimpleFilter, "and" | "or", SimpleFilter];
-
 export default function DevExpressGrid() {
-  const [error, setError] = useState<string | null>(null);
+  const apiUrl = "http://localhost:5160/odata/Products";
 
-  const defaultFilterValue: SimpleFilter = ["active", "=", true];
-
-  const dataSource = new CustomStore<Product, number>({
-    key: "id",
-
-    load: async (loadOptions: LoadOptions) => {
+  const dataSource = new CustomStore({
+    key: "Id",
+    load: async (loadOptions) => {
       try {
-        const pageSize = loadOptions.take ?? 20;
-        const from = loadOptions.skip ?? 0;
-        const to = from + pageSize - 1;
+        const params = new URLSearchParams();
 
-        let query = supabase
-          .from("products")
-          .select("*", { count: "exact" })
-          .range(from, to);
+        // --- Paginacja
+        const skip = loadOptions.skip ?? 0;
+        const top = loadOptions.take ?? 20;
+        params.append("$skip", String(skip));
+        params.append("$top", String(top));
+        params.append("$count", "true");
 
+        // --- Sortowanie
         if (Array.isArray(loadOptions.sort) && loadOptions.sort.length > 0) {
-          const sortItem = loadOptions.sort[0] as SortDescriptor<Product>;
-          if (typeof sortItem === "string") {
-            query = query.order(sortItem, { ascending: true });
-          } else if (
-            typeof sortItem === "object" &&
-            sortItem.selector &&
-            typeof sortItem.selector === "string"
-          ) {
-            query = query.order(sortItem.selector, {
-              ascending: sortItem.desc ? false : true,
-            });
+          const sort = loadOptions.sort[0];
+          if (typeof sort === "string") {
+            params.append("$orderby", sort);
+          } else if (typeof sort === "object" && sort.selector) {
+            const selector =
+              typeof sort.selector === "string"
+                ? sort.selector
+                : String(sort.selector);
+            params.append(
+              "$orderby",
+              `${selector} ${sort.desc ? "desc" : "asc"}`
+            );
           }
         }
 
-        const applyFilter = (filter: unknown): void => {
-          if (
-            Array.isArray(filter) &&
-            filter.length === 3 &&
-            typeof filter[0] === "string"
-          ) {
-            const [field, operator, value] = filter as [
-              keyof Product,
-              string,
-              string | number | boolean
-            ];
+        if (loadOptions.filter) {
+          type DevExtremeFilter =
+            | [string, string, string | number | boolean]
+            | (string | DevExtremeFilter)[];
 
-            if (value !== undefined) {
-              switch (operator) {
-                case "contains":
-                  query = query.ilike(field as string, `%${value}%`);
-                  break;
-                case "=":
-                  query = query.eq(field as string, value);
-                  break;
-                case "<":
-                  query = query.lt(field as string, value as number | string);
-                  break;
-                case ">":
-                  query = query.gt(field as string, value as number | string);
-                  break;
-                case "<=":
-                  query = query.lte(field as string, value as number | string);
-                  break;
-                case ">=":
-                  query = query.gte(field as string, value as number | string);
-                  break;
-              }
+          const buildFilter = (filter: DevExtremeFilter): string => {
+            if (Array.isArray(filter[0])) {
+              return (filter as (string | DevExtremeFilter)[])
+                .map((f) =>
+                  Array.isArray(f)
+                    ? buildFilter(f)
+                    : f === "and" || f === "or"
+                    ? f
+                    : ""
+                )
+                .join(" ");
             }
-          } else if (Array.isArray(filter)) {
-            for (const part of filter) {
-              if (Array.isArray(part)) applyFilter(part);
+
+            const [field, operator, value] = filter;
+            const val =
+              typeof value === "string"
+                ? `'${value.replace(/'/g, "''")}'`
+                : value;
+
+            switch (operator) {
+              case "=":
+                return `${field} eq ${val}`;
+              case "<>":
+                return `${field} ne ${val}`;
+              case ">":
+                return `${field} gt ${val}`;
+              case "<":
+                return `${field} lt ${val}`;
+              case ">=":
+                return `${field} ge ${val}`;
+              case "<=":
+                return `${field} le ${val}`;
+              case "contains":
+                return `contains(${field}, ${val})`;
+              case "notcontains":
+                return `not contains(${field}, ${val})`;
+              case "startswith":
+                return `startswith(${field}, ${val})`;
+              case "endswith":
+                return `endswith(${field}, ${val})`;
+              default:
+                return "";
             }
-          }
+          };
+
+          const filterQuery = buildFilter(loadOptions.filter);
+          if (filterQuery) params.append("$filter", filterQuery);
+        }
+
+        const response = await fetch(`${apiUrl}?${params.toString()}`, {
+          headers: {
+            Accept: "application/json;odata.metadata=minimal",
+          },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+
+        return {
+          data: json.value,
+          totalCount: json["@odata.count"] ?? 0,
         };
-
-        if (Array.isArray(loadOptions.filter)) applyFilter(loadOptions.filter);
-
-        const { data, count, error } = await query;
-        if (error) throw error;
-
-        setError(null);
-        return { data: data ?? [], totalCount: count ?? 0 };
-      } catch (err) {
-        console.error("Błąd ładowania danych:", err);
-        setError((err as Error).message);
-        throw err;
+      } catch (error) {
+        console.error("Błąd ładowania danych:", error);
+        throw error;
       }
     },
-
-    insert: async (values): Promise<Product> => {
-      const { data, error } = await supabase
-        .from("products")
-        .insert(values)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Product;
+    insert: async (values) => {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error(`Błąd dodawania: ${res.status}`);
+      return await res.json();
     },
 
-    update: async (key, values): Promise<Product> => {
-      const { data, error } = await supabase
-        .from("products")
-        .update(values)
-        .eq("id", key)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Product;
+    update: async (key, values) => {
+      const res = await fetch(`${apiUrl}(${key})`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error(`Błąd aktualizacji: ${res.status}`);
+      return await res.json();
     },
 
-    remove: async (key): Promise<void> => {
-      const { error } = await supabase.from("products").delete().eq("id", key);
-      if (error) throw error;
+    remove: async (key) => {
+      const res = await fetch(`${apiUrl}(${key})`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Błąd usuwania: ${res.status}`);
     },
   });
 
-  if (error)
-    return (
-      <div className="p-6 text-red-600 font-medium">
-        Błąd podczas wczytywania danych: {error}
-      </div>
-    );
-
   return (
-    <div className="p-6">
-      <DataGrid
-        dataSource={dataSource}
-        remoteOperations={{ paging: true, sorting: true, filtering: true }}
-        keyExpr="id"
-        showBorders
-        rowAlternationEnabled
-        hoverStateEnabled
-        columnAutoWidth
-        repaintChangesOnly
-        defaultFilterValue={defaultFilterValue}
-      >
-        <FilterRow visible applyFilter="auto" />
-        <HeaderFilter visible />
-        <FilterPanel visible />
-        <FilterBuilderPopup
-          position={{ of: window, at: "top", my: "top", offset: { y: 10 } }}
-        />
+    <div className="min-h-screen flex flex-col items-center py-10">
+      <div className="w-full max-w-7xl bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
+        <DataGrid
+          dataSource={dataSource}
+          remoteOperations={{ paging: true, sorting: true, filtering: true }}
+          keyExpr="Id"
+          showBorders
+          rowAlternationEnabled
+          hoverStateEnabled
+          columnAutoWidth
+          repaintChangesOnly
+          height="700px"
+        >
+          <FilterRow visible applyFilter="auto" />
+          <HeaderFilter visible />
+          <FilterPanel visible />
+          <FilterBuilderPopup
+            position={{ of: window, at: "top", my: "top", offset: { y: 10 } }}
+          />
 
-        <Editing mode="row" allowUpdating allowAdding allowDeleting useIcons />
+          <Editing
+            mode="row"
+            allowUpdating
+            allowAdding
+            allowDeleting
+            useIcons
+          />
 
-        <Paging defaultPageSize={10} />
-        <Pager
-          showPageSizeSelector
-          allowedPageSizes={[10, 20, 50, 100]}
-          showNavigationButtons
-          showInfo
-          infoText="Strona {0} z {1} ({2} rekordów)"
-        />
+          <Paging defaultPageSize={20} />
+          <Pager
+            showPageSizeSelector
+            allowedPageSizes={[10, 20, 50, 100]}
+            showNavigationButtons
+            showInfo
+            infoText="Strona {0} z {1} ({2} rekordów)"
+          />
 
-        <Toolbar>
-          <ToolbarItem name="addRowButton" />
-          <ToolbarItem name="exportButton" />
-        </Toolbar>
+          <Toolbar>
+            <ToolbarItem name="addRowButton" />
+            <ToolbarItem name="searchPanel" />
+          </Toolbar>
 
-        {devexpressColumns.map((col) => (
-          <Column key={col.dataField} {...col} />
-        ))}
-      </DataGrid>
+          <Column dataField="Id" caption="ID" width={70} />
+          <Column dataField="Name" caption="Nazwa produktu" />
+          <Column dataField="Category" caption="Kategoria" />
+          <Column
+            dataField="Price"
+            caption="Cena"
+            dataType="number"
+            format="#,##0.00 zł"
+          />
+          <Column dataField="Stock" caption="Stan" dataType="number" />
+          <Column dataField="Discount" caption="Zniżka (%)" dataType="number" />
+          <Column dataField="Brand" caption="Marka" />
+          <Column dataField="Supplier" caption="Dostawca" />
+          <Column dataField="Warehouse" caption="Magazyn" />
+          <Column dataField="Color" caption="Kolor" />
+          <Column dataField="Size" caption="Rozmiar" />
+          <Column dataField="Rating" caption="Ocena" dataType="number" />
+          <Column dataField="Active" caption="Aktywny" dataType="boolean" />
+          <Column dataField="CreatedAt" caption="Utworzono" dataType="date" />
+          <Column
+            dataField="UpdatedAt"
+            caption="Zaktualizowano"
+            dataType="date"
+          />
+          <Column dataField="Description" caption="Opis" width={250} />
+        </DataGrid>
+      </div>
     </div>
   );
 }

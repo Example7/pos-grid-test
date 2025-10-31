@@ -17,3 +17,23 @@ export type Product = {
   color: string | null;
   size: string | null;
 };
+
+export type ODataProduct = {
+  Id: number;
+  Name: string;
+  Category: string;
+  Description?: string;
+  Sku?: string;
+  Price: number;
+  Stock: number;
+  Warehouse?: string;
+  Brand?: string;
+  Supplier?: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+  Discount?: number;
+  Rating?: number;
+  Active: boolean;
+  Color?: string;
+  Size?: string;
+};

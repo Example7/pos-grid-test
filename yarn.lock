@@ -2469,6 +2469,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"devextreme-aspnet-data-nojquery@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "devextreme-aspnet-data-nojquery@npm:5.1.0"
+  peerDependencies:
+    devextreme: ">=18.1.0"
+  checksum: 10c0/662c0d18665645bede9ccca320696041afaa0698bf2f6e802b0e2d8aef8ca822e43866082e162f05c4d6d44d5caccc5b8ee403cc4f7a27bc3776329e8e6cafb8
+  languageName: node
+  linkType: hard
+
 "devextreme-quill@npm:1.7.6":
   version: 1.7.6
   resolution: "devextreme-quill@npm:1.7.6"
@@ -4028,6 +4037,7 @@ __metadata:
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
     devextreme: "npm:^25.1.6"
+    devextreme-aspnet-data-nojquery: "npm:^5.1.0"
     devextreme-react: "npm:^25.1.6"
     eslint: "npm:^9.36.0"
     eslint-plugin-react-hooks: "npm:^5.2.0"
