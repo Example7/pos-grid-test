@@ -50,6 +50,9 @@ builder.Services.AddControllers().AddOData(opt =>
 {
     var modelBuilder = new ODataConventionModelBuilder();
     modelBuilder.EntitySet<Product>("Products");
+    modelBuilder.EntitySet<Shop>("Shops");
+    modelBuilder.EntitySet<Device>("Devices");
+    modelBuilder.EntitySet<User>("Users");
 
     opt.AddRouteComponents("odata", modelBuilder.GetEdmModel())
        .Select()

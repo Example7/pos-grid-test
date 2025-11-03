@@ -13,6 +13,9 @@ namespace DevExpress.Data
         }
 
         public DbSet<Product> Products => Set<Product>();
+        public DbSet<Shop> Shops => Set<Shop>();
+        public DbSet<Device> Devices => Set<Device>();
+        public DbSet<User> Users => Set<User>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
