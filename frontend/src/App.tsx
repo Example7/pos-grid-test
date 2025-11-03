@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { Home, Mui, Shadcn, AgGrid, DevExpress } from "./pages";
 import { Table, Grid, HomeIcon } from "lucide-react";
+import ShopsGrid from "./pages/ShopsGrid";
+import DevicesGrid from "./pages/DevicesGrid";
+import UsersGrid from "./pages/UsersGrid";
 
 export default function App() {
   const links = [
@@ -45,6 +48,9 @@ export default function App() {
           <Route path="/shadcn" element={<Shadcn />} />
           <Route path="/aggrid" element={<AgGrid />} />
           <Route path="/devexpress" element={<DevExpress />} />
+          <Route path="/shops" element={<ShopsGrid />} />
+          <Route path="/devices" element={<DevicesGrid />} />
+          <Route path="/users" element={<UsersGrid />} />
         </Routes>
       </main>
     </BrowserRouter>
