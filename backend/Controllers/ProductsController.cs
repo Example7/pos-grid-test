@@ -11,6 +11,7 @@ namespace DevExpress.Controllers
     public class ProductsController : ODataController
     {
         private readonly AppDbContext _context;
+
         public ProductsController(AppDbContext context)
         {
             _context = context;
@@ -31,8 +32,18 @@ namespace DevExpress.Controllers
 
         public async Task<IActionResult> Post([FromBody] Product product)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (string.IsNullOrWhiteSpace(product.Name))
+                return BadRequest("Pole 'Name' jest wymagane.");
+
+            if (product.Price <= 0)
+                return BadRequest("Cena musi być większa niż 0.");
+
             product.CreatedAt = DateTime.UtcNow;
             product.UpdatedAt = DateTime.UtcNow;
+
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return Created(product);
@@ -44,6 +55,13 @@ namespace DevExpress.Controllers
             if (product == null) return NotFound();
 
             patch.Patch(product);
+
+            if (string.IsNullOrWhiteSpace(product.Name))
+                return BadRequest("Pole 'Name' jest wymagane.");
+
+            if (product.Price <= 0)
+                return BadRequest("Cena musi być większa niż 0.");
+
             product.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return Ok(product);
@@ -58,5 +76,24 @@ namespace DevExpress.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpPost]
+        [Route("api/CheckNameUnique")]
+        public IActionResult CheckNameUnique([FromBody] ProductNameCheckDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest(new { isUnique = true });
+
+            var exists = _context.Products
+                .Any(p => p.Name == dto.Name && p.Id != dto.Id);
+
+            return Ok(new { isUnique = !exists });
+        }
+    }
+
+    public class ProductNameCheckDto
+    {
+        public int? Id { get; set; }
+        public string Name { get; set; }
     }
 }
