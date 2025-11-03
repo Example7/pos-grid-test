@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import DataGrid, {
   Column,
   Paging,
@@ -13,18 +14,16 @@ import DataGrid, {
   FilterBuilderPopup,
 } from "devextreme-react/data-grid";
 import CustomStore from "devextreme/data/custom_store";
-import "devextreme/dist/css/dx.material.blue.light.css";
 
 export default function DevExpressGrid() {
   const apiUrl = "http://localhost:5135/odata/Products";
+  const [wrapEnabled, setWrapEnabled] = useState(false);
 
   const dataSource = new CustomStore({
     key: "Id",
     load: async (loadOptions) => {
       try {
         const params = new URLSearchParams();
-
-        // --- Paginacja
         const skip = loadOptions.skip ?? 0;
         const top = loadOptions.take ?? 20;
         params.append("$skip", String(skip));
@@ -48,6 +47,7 @@ export default function DevExpressGrid() {
           }
         }
 
+        // --- Filtrowanie
         if (loadOptions.filter) {
           type DevExtremeFilter =
             | [string, string, string | number | boolean]
@@ -103,9 +103,7 @@ export default function DevExpressGrid() {
         }
 
         const response = await fetch(`${apiUrl}?${params.toString()}`, {
-          headers: {
-            Accept: "application/json;odata.metadata=minimal",
-          },
+          headers: { Accept: "application/json;odata.metadata=minimal" },
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -129,7 +127,6 @@ export default function DevExpressGrid() {
       if (!res.ok) throw new Error(`Błąd dodawania: ${res.status}`);
       return await res.json();
     },
-
     update: async (key, values) => {
       const res = await fetch(`${apiUrl}(${key})`, {
         method: "PATCH",
@@ -139,7 +136,6 @@ export default function DevExpressGrid() {
       if (!res.ok) throw new Error(`Błąd aktualizacji: ${res.status}`);
       return await res.json();
     },
-
     remove: async (key) => {
       const res = await fetch(`${apiUrl}(${key})`, { method: "DELETE" });
       if (!res.ok) throw new Error(`Błąd usuwania: ${res.status}`);
@@ -147,8 +143,10 @@ export default function DevExpressGrid() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-10">
-      <div className="w-full max-w-7xl bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
+    <div className="flex flex-col items-center py-10">
+      <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
+        <h2 className="text-2xl font-semibold mb-4">Products</h2>
+
         <DataGrid
           dataSource={dataSource}
           remoteOperations={{ paging: true, sorting: true, filtering: true }}
@@ -156,9 +154,14 @@ export default function DevExpressGrid() {
           showBorders
           rowAlternationEnabled
           hoverStateEnabled
-          columnAutoWidth
           repaintChangesOnly
           height="700px"
+          columnAutoWidth={false}
+          allowColumnResizing={true}
+          columnResizingMode="widget"
+          wordWrapEnabled={wrapEnabled}
+          width="100%"
+          scrolling={{ mode: "standard", showScrollbar: "always" }}
         >
           <FilterRow visible applyFilter="auto" />
           <HeaderFilter visible />
@@ -187,33 +190,70 @@ export default function DevExpressGrid() {
           <Toolbar>
             <ToolbarItem name="addRowButton" />
             <ToolbarItem name="searchPanel" />
+            <ToolbarItem
+              widget="dxButton"
+              options={{
+                text: wrapEnabled ? "Wyłącz zawijanie" : "Włącz zawijanie",
+                icon: wrapEnabled ? "collapse" : "expand",
+                hint: "Przełącz zawijanie tekstu",
+                onClick: () => setWrapEnabled(!wrapEnabled),
+              }}
+              location="after"
+            />
           </Toolbar>
 
           <Column dataField="Id" caption="ID" width={70} />
-          <Column dataField="Name" caption="Nazwa produktu" />
-          <Column dataField="Category" caption="Kategoria" />
+          <Column dataField="Name" caption="Nazwa produktu" width={180} />
+          <Column dataField="Category" caption="Kategoria" width={130} />
           <Column
             dataField="Price"
             caption="Cena"
             dataType="number"
             format="#,##0.00 zł"
+            width={100}
           />
-          <Column dataField="Stock" caption="Stan" dataType="number" />
-          <Column dataField="Discount" caption="Zniżka (%)" dataType="number" />
-          <Column dataField="Brand" caption="Marka" />
-          <Column dataField="Supplier" caption="Dostawca" />
-          <Column dataField="Warehouse" caption="Magazyn" />
-          <Column dataField="Color" caption="Kolor" />
-          <Column dataField="Size" caption="Rozmiar" />
-          <Column dataField="Rating" caption="Ocena" dataType="number" />
-          <Column dataField="Active" caption="Aktywny" dataType="boolean" />
-          <Column dataField="CreatedAt" caption="Utworzono" dataType="date" />
+          <Column
+            dataField="Stock"
+            caption="Stan"
+            dataType="number"
+            width={90}
+          />
+          <Column
+            dataField="Discount"
+            caption="Zniżka (%)"
+            dataType="number"
+            width={120}
+          />
+          <Column dataField="Brand" caption="Marka" width={110} />
+          <Column dataField="Supplier" caption="Dostawca" width={130} />
+          <Column dataField="Warehouse" caption="Magazyn" width={130} />
+          <Column dataField="Color" caption="Kolor" width={100} />
+          <Column dataField="Size" caption="Rozmiar" width={100} />
+          <Column
+            dataField="Rating"
+            caption="Ocena"
+            dataType="number"
+            width={90}
+          />
+          <Column
+            dataField="Active"
+            caption="Aktywny"
+            dataType="boolean"
+            width={120}
+          />
+          <Column
+            dataField="CreatedAt"
+            caption="Utworzono"
+            dataType="date"
+            width={130}
+          />
           <Column
             dataField="UpdatedAt"
             caption="Zaktualizowano"
             dataType="date"
+            width={170}
           />
-          <Column dataField="Description" caption="Opis" width={250} />
+          <Column dataField="Description" caption="Opis" minWidth={150} />
         </DataGrid>
       </div>
     </div>

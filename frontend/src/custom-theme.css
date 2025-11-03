@@ -1,0 +1,26 @@
+/* ===== CIEMNIEJSZY HEADER KOLUMN ===== */
+.dx-datagrid-headers {
+  background-color: #2f3640 !important; /* ciemny grafit */
+}
+
+.dx-datagrid-headers .dx-datagrid-text-content {
+  color: #f5f6fa !important; /* jasny tekst */
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Dolna linia oddzielająca header od tabeli */
+.dx-datagrid-headers .dx-row {
+  border-bottom: 2px solid #444 !important;
+}
+
+/* Subtelne podświetlenie kolumny przy sortowaniu */
+.dx-datagrid-headers .dx-datagrid-action {
+  background-color: #3a414d !important;
+  transition: background-color 0.2s ease;
+}
+
+.dx-datagrid-headers .dx-datagrid-action:hover {
+  background-color: #464e5a !important;
+}

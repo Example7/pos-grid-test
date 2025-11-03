@@ -4,6 +4,8 @@ import { Table, Grid, HomeIcon } from "lucide-react";
 import ShopsGrid from "./pages/ShopsGrid";
 import DevicesGrid from "./pages/DevicesGrid";
 import UsersGrid from "./pages/UsersGrid";
+import "devextreme/dist/css/dx.light.css";
+import "./custom-theme.css";
 
 export default function App() {
   const links = [
