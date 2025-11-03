@@ -8,10 +8,13 @@ import UsersGrid from "./pages/UsersGrid";
 export default function App() {
   const links = [
     { to: "/", label: "Home", icon: <HomeIcon size={18} /> },
-    { to: "/mui", label: "MUI DataGrid", icon: <Grid size={18} /> },
-    { to: "/shadcn", label: "Shadcn Table", icon: <Table size={18} /> },
-    { to: "/aggrid", label: "AG Grid", icon: <Grid size={18} /> },
+    //{ to: "/mui", label: "MUI DataGrid", icon: <Grid size={18} /> },
+    //{ to: "/shadcn", label: "Shadcn Table", icon: <Table size={18} /> },
+    //{ to: "/aggrid", label: "AG Grid", icon: <Grid size={18} /> },
     { to: "/devexpress", label: "DevExpress", icon: <Grid size={18} /> },
+    { to: "/shops", label: "Shops", icon: <Grid size={18} /> },
+    { to: "/devices", label: "Devices", icon: <Grid size={18} /> },
+    { to: "/users", label: "Users", icon: <Grid size={18} /> },
   ];
 
   return (

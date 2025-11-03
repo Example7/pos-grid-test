@@ -16,7 +16,7 @@ import CustomStore from "devextreme/data/custom_store";
 import "devextreme/dist/css/dx.material.blue.light.css";
 
 export default function DevExpressGrid() {
-  const apiUrl = "http://localhost:5136/odata/Products";
+  const apiUrl = "http://localhost:5135/odata/Products";
 
   const dataSource = new CustomStore({
     key: "Id",
