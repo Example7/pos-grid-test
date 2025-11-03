@@ -48,3 +48,9 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+*.deb
+*.tar.gz
+*.zip
+*.exe
+*.msi
