@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using System.Text;
 
@@ -14,6 +15,8 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "http://localhost:5160";
 
 var connectionString = builder.Configuration.GetConnectionString("Supabase");
 Console.WriteLine(">>> Connection string: " + connectionString);
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -35,7 +38,11 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(connectionString, b => b.CommandTimeout(120)));
+    opt.UseNpgsql(connectionString, b =>
+    {
+        b.CommandTimeout(120);
+        b.EnableRetryOnFailure();
+    }));
 
 builder.Services.AddCors(options =>
 {
@@ -46,22 +53,21 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 
-builder.Services.AddControllers().AddOData(opt =>
+builder.Services.AddControllers()
+    .AddOData(opt =>
+        opt.Select().Filter().OrderBy().Count().Expand().SetMaxTop(1000)
+           .AddRouteComponents("odata", GetEdmModel())
+    );
+
+IEdmModel GetEdmModel()
 {
     var modelBuilder = new ODataConventionModelBuilder();
     modelBuilder.EntitySet<Product>("Products");
     modelBuilder.EntitySet<Shop>("Shops");
     modelBuilder.EntitySet<Device>("Devices");
     modelBuilder.EntitySet<User>("Users");
-
-    opt.AddRouteComponents("odata", modelBuilder.GetEdmModel())
-       .Select()
-       .Filter()
-       .OrderBy()
-       .Count()
-       .Expand()
-       .SetMaxTop(1000);
-});
+    return modelBuilder.GetEdmModel();
+}
 
 var app = builder.Build();
 

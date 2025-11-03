@@ -31,8 +31,8 @@ namespace DevExpress.Controllers
 
         public async Task<IActionResult> Post([FromBody] User user)
         {
-            user.CreatedAt = DateTime.Now;
-            user.UpdatedAt = DateTime.Now;
+            user.CreatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return Created(user);
@@ -40,14 +40,30 @@ namespace DevExpress.Controllers
 
         public async Task<IActionResult> Patch(int key, [FromBody] Delta<User> patch)
         {
-            var user = await _context.Users.FindAsync(key);
-            if (user == null) return NotFound();
+            try
+            {
+                var user = await _context.Users.FindAsync(key);
+                if (user == null)
+                    return NotFound();
 
-            patch.Patch(user);
-            user.UpdatedAt = DateTime.Now;
-            await _context.SaveChangesAsync();
-            return Updated(user);
+                patch.Patch(user);
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return Ok(user);
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"[DB ERROR] {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, new { message = "Database update failed", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SERVER ERROR] {ex.Message}");
+                return StatusCode(500, new { message = "Unexpected error", error = ex.Message });
+            }
         }
+
 
         public async Task<IActionResult> Delete(int key)
         {

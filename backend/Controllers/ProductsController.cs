@@ -31,8 +31,8 @@ namespace DevExpress.Controllers
 
         public async Task<IActionResult> Post([FromBody] Product product)
         {
-            product.CreatedAt = DateTime.Now;
-            product.UpdatedAt = DateTime.Now;
+            product.CreatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.UtcNow;
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return Created(product);
@@ -44,9 +44,9 @@ namespace DevExpress.Controllers
             if (product == null) return NotFound();
 
             patch.Patch(product);
-            product.UpdatedAt = DateTime.Now;
+            product.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            return Updated(product);
+            return Ok(product);
         }
 
         public async Task<IActionResult> Delete(int key)

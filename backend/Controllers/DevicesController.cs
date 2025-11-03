@@ -31,8 +31,8 @@ namespace DevExpress.Controllers
 
         public async Task<IActionResult> Post([FromBody] Device device)
         {
-            device.CreatedAt = DateTime.Now;
-            device.UpdatedAt = DateTime.Now;
+            device.CreatedAt = DateTime.UtcNow;
+            device.UpdatedAt = DateTime.UtcNow;
             _context.Devices.Add(device);
             await _context.SaveChangesAsync();
             return Created(device);
@@ -44,9 +44,9 @@ namespace DevExpress.Controllers
             if (device == null) return NotFound();
 
             patch.Patch(device);
-            device.UpdatedAt = DateTime.Now;
+            device.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            return Updated(device);
+            return Ok(device);
         }
 
         public async Task<IActionResult> Delete(int key)
