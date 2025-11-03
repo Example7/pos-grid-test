@@ -1,26 +1,51 @@
-/* ===== CIEMNIEJSZY HEADER KOLUMN ===== */
+/* ===== CIEMNY HEADER I TOOLBAR ===== */
 .dx-datagrid-headers {
-  background-color: #2f3640 !important; /* ciemny grafit */
-}
-
-.dx-datagrid-headers .dx-datagrid-text-content {
-  color: #f5f6fa !important; /* jasny tekst */
+  background-color: #2f3640 !important;
+  color: #f5f6fa !important;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-/* Dolna linia oddzielająca header od tabeli */
-.dx-datagrid-headers .dx-row {
   border-bottom: 2px solid #444 !important;
 }
 
-/* Subtelne podświetlenie kolumny przy sortowaniu */
-.dx-datagrid-headers .dx-datagrid-action {
-  background-color: #3a414d !important;
-  transition: background-color 0.2s ease;
+/* ===== POPRAWIONA KOLUMNA AKCJI (EDYCJA / USUWANIE) ===== */
+
+/* Usuń sticky efekt i ciemny prostokąt */
+.dx-datagrid-sticky-column-right {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
-.dx-datagrid-headers .dx-datagrid-action:hover {
-  background-color: #464e5a !important;
+/* Komórki kolumny akcji — dopasuj do reszty wiersza */
+.dx-datagrid .dx-command-edit {
+  background-color: transparent !important;
+  border-left: 1px solid #e0e0e0 !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  width: 80px !important;
+}
+
+/* Ikony — eleganckie, stonowane */
+.dx-datagrid .dx-command-edit .dx-link,
+.dx-datagrid .dx-command-edit .dx-icon {
+  color: #444 !important;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+/* Efekt hover — niebieski akcent i lekka animacja */
+.dx-datagrid .dx-command-edit .dx-link:hover,
+.dx-datagrid .dx-command-edit .dx-icon:hover {
+  color: #0078ff !important;
+  transform: scale(1.2);
+}
+
+/* Hover całego wiersza (ładny efekt admin panelowy) */
+.dx-datagrid-rowsview .dx-row:hover > td {
+  background-color: #f0f2f5 !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Naprawa wyrównania sticky border */
+.dx-datagrid-sticky-column-border-left {
+  border-left: 1px solid #ccc !important;
 }

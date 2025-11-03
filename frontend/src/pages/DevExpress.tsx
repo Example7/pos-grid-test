@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import DataGrid, {
   Column,
   Paging,
@@ -11,13 +11,33 @@ import DataGrid, {
   FilterRow,
   HeaderFilter,
   FilterPanel,
-  FilterBuilderPopup,
+  ColumnChooser,
+  RequiredRule,
+  PatternRule,
+  AsyncRule,
 } from "devextreme-react/data-grid";
 import CustomStore from "devextreme/data/custom_store";
 
 export default function DevExpressGrid() {
   const apiUrl = "http://localhost:5135/odata/Products";
   const [wrapEnabled, setWrapEnabled] = useState(false);
+
+  const asyncValidation = async (params: any) => {
+    try {
+      const res = await fetch(`http://localhost:5135/api/CheckNameUnique`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: params.data?.Id,
+          name: params.value,
+        }),
+      });
+      const result = await res.json();
+      return result?.isUnique ?? true;
+    } catch {
+      return true;
+    }
+  };
 
   const dataSource = new CustomStore({
     key: "Id",
@@ -30,12 +50,10 @@ export default function DevExpressGrid() {
         params.append("$top", String(top));
         params.append("$count", "true");
 
-        // --- Sortowanie
+        // Sortowanie
         if (Array.isArray(loadOptions.sort) && loadOptions.sort.length > 0) {
           const sort = loadOptions.sort[0];
-          if (typeof sort === "string") {
-            params.append("$orderby", sort);
-          } else if (typeof sort === "object" && sort.selector) {
+          if (typeof sort === "object" && sort.selector) {
             const selector =
               typeof sort.selector === "string"
                 ? sort.selector
@@ -47,7 +65,7 @@ export default function DevExpressGrid() {
           }
         }
 
-        // --- Filtrowanie
+        // Filtrowanie
         if (loadOptions.filter) {
           type DevExtremeFilter =
             | [string, string, string | number | boolean]
@@ -87,8 +105,6 @@ export default function DevExpressGrid() {
                 return `${field} le ${val}`;
               case "contains":
                 return `contains(${field}, ${val})`;
-              case "notcontains":
-                return `not contains(${field}, ${val})`;
               case "startswith":
                 return `startswith(${field}, ${val})`;
               case "endswith":
@@ -143,8 +159,8 @@ export default function DevExpressGrid() {
   });
 
   return (
-    <div className="flex flex-col items-center py-10">
-      <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
+    <div className="min-h-screen flex flex-col items-center py-10">
+      <div className="w-full bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
         <h2 className="text-2xl font-semibold mb-4">Products</h2>
 
         <DataGrid
@@ -156,22 +172,18 @@ export default function DevExpressGrid() {
           hoverStateEnabled
           repaintChangesOnly
           height="700px"
-          columnAutoWidth={false}
-          allowColumnResizing={true}
-          columnResizingMode="widget"
-          wordWrapEnabled={wrapEnabled}
           width="100%"
-          scrolling={{ mode: "standard", showScrollbar: "always" }}
+          columnAutoWidth
+          allowColumnResizing
+          allowColumnReordering
+          wordWrapEnabled={wrapEnabled}
         >
           <FilterRow visible applyFilter="auto" />
           <HeaderFilter visible />
           <FilterPanel visible />
-          <FilterBuilderPopup
-            position={{ of: window, at: "top", my: "top", offset: { y: 10 } }}
-          />
 
           <Editing
-            mode="row"
+            mode="batch"
             allowUpdating
             allowAdding
             allowDeleting
@@ -184,12 +196,14 @@ export default function DevExpressGrid() {
             allowedPageSizes={[10, 20, 50, 100]}
             showNavigationButtons
             showInfo
-            infoText="Strona {0} z {1} ({2} rekordów)"
           />
 
           <Toolbar>
             <ToolbarItem name="addRowButton" />
+            <ToolbarItem name="saveButton" />
+            <ToolbarItem name="revertButton" />
             <ToolbarItem name="searchPanel" />
+            <ToolbarItem name="columnChooserButton" />
             <ToolbarItem
               widget="dxButton"
               options={{
@@ -202,58 +216,102 @@ export default function DevExpressGrid() {
             />
           </Toolbar>
 
-          <Column dataField="Id" caption="ID" width={70} />
-          <Column dataField="Name" caption="Nazwa produktu" width={180} />
-          <Column dataField="Category" caption="Kategoria" width={130} />
+          <ColumnChooser enabled={true} mode="select" />
+
+          <Column dataField="Id" caption="ID" width={70} allowEditing={false} />
+
+          <Column dataField="Name" caption="Nazwa produktu" width={180}>
+            <RequiredRule message="Nazwa produktu jest wymagana" />
+            <AsyncRule
+              message="Produkt o tej nazwie już istnieje"
+              validationCallback={asyncValidation}
+            />
+          </Column>
+
+          <Column dataField="Category" caption="Kategoria" width={130}>
+            <RequiredRule message="Podaj kategorię" />
+          </Column>
+
           <Column
             dataField="Price"
             caption="Cena"
             dataType="number"
             format="#,##0.00 zł"
             width={100}
-          />
-          <Column
-            dataField="Stock"
-            caption="Stan"
-            dataType="number"
-            width={90}
-          />
+          >
+            <RequiredRule message="Cena jest wymagana" />
+            <PatternRule
+              pattern={/^[0-9]+(\.[0-9]{1,2})?$/}
+              message="Podaj poprawną liczbę"
+            />
+          </Column>
+
+          <Column dataField="Stock" caption="Stan" dataType="number" width={90}>
+            <PatternRule pattern={/^\d+$/} message="Stan musi być liczbą" />
+          </Column>
+
           <Column
             dataField="Discount"
             caption="Zniżka (%)"
             dataType="number"
             width={120}
-          />
-          <Column dataField="Brand" caption="Marka" width={110} />
+          >
+            <PatternRule
+              pattern={/^(?:[0-9]|[1-9][0-9]|100)$/}
+              message="Zniżka musi być w zakresie 0–100"
+            />
+          </Column>
+
+          <Column dataField="Brand" caption="Marka" width={110}>
+            <RequiredRule message="Podaj markę" />
+          </Column>
+
           <Column dataField="Supplier" caption="Dostawca" width={130} />
           <Column dataField="Warehouse" caption="Magazyn" width={130} />
           <Column dataField="Color" caption="Kolor" width={100} />
           <Column dataField="Size" caption="Rozmiar" width={100} />
+
           <Column
             dataField="Rating"
             caption="Ocena"
             dataType="number"
             width={90}
-          />
+          >
+            <PatternRule
+              pattern={/^[0-5](\.\d{1})?$/}
+              message="Ocena 0–5 z dokładnością do 0.1"
+            />
+          </Column>
+
           <Column
             dataField="Active"
             caption="Aktywny"
             dataType="boolean"
             width={120}
           />
+
           <Column
             dataField="CreatedAt"
             caption="Utworzono"
             dataType="date"
             width={130}
+            allowEditing={false}
           />
+
           <Column
             dataField="UpdatedAt"
             caption="Zaktualizowano"
             dataType="date"
             width={170}
+            allowEditing={false}
           />
-          <Column dataField="Description" caption="Opis" minWidth={150} />
+
+          <Column dataField="Description" caption="Opis" minWidth={150}>
+            <PatternRule
+              pattern={/^.{0,500}$/}
+              message="Opis nie może przekraczać 500 znaków"
+            />
+          </Column>
         </DataGrid>
       </div>
     </div>

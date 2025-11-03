@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { Home, Mui, Shadcn, AgGrid, DevExpress } from "./pages";
-import { Table, Grid, HomeIcon } from "lucide-react";
+import { Grid, HomeIcon } from "lucide-react";
 import ShopsGrid from "./pages/ShopsGrid";
 import DevicesGrid from "./pages/DevicesGrid";
 import UsersGrid from "./pages/UsersGrid";
