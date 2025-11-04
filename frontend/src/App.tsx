@@ -1,30 +1,43 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
-import { Home, Mui, Shadcn, AgGrid, DevExpress } from "./pages";
-import { Grid, HomeIcon } from "lucide-react";
-import ShopsGrid from "./pages/ShopsGrid";
-import DevicesGrid from "./pages/DevicesGrid";
-import UsersGrid from "./pages/UsersGrid";
+import {
+  HomeIcon,
+  ShoppingCart,
+  Users,
+  Building2,
+  Package,
+} from "lucide-react";
+import Home from "./pages/Home";
+import ProductsGrid from "./pages/ProductsGrid";
+import ContractorsGrid from "./pages/ContractorsGrid";
+import EmployeesGrid from "./pages/EmployeesGrid";
+import OrdersGrid from "./pages/OrdersGrid";
+import StoresGrid from "./pages/StoresGrid";
 import "devextreme/dist/css/dx.light.css";
-import "./custom-theme.css";
+import OrdersItemsGrid from "./pages/OrdersItemsGrid";
 
 export default function App() {
   const links = [
     { to: "/", label: "Home", icon: <HomeIcon size={18} /> },
-    //{ to: "/mui", label: "MUI DataGrid", icon: <Grid size={18} /> },
-    //{ to: "/shadcn", label: "Shadcn Table", icon: <Table size={18} /> },
-    //{ to: "/aggrid", label: "AG Grid", icon: <Grid size={18} /> },
-    { to: "/devexpress", label: "DevExpress", icon: <Grid size={18} /> },
-    { to: "/shops", label: "Shops", icon: <Grid size={18} /> },
-    { to: "/devices", label: "Devices", icon: <Grid size={18} /> },
-    { to: "/users", label: "Users", icon: <Grid size={18} /> },
+    { to: "/products", label: "Produkty", icon: <Package size={18} /> },
+    { to: "/contractors", label: "Kontrahenci", icon: <Users size={18} /> },
+    { to: "/employees", label: "Pracownicy", icon: <Users size={18} /> },
+    { to: "/orders", label: "Zamówienia", icon: <ShoppingCart size={18} /> },
+    {
+      to: "/orders-items",
+      label: "Pozycje zamówień",
+      icon: <ShoppingCart size={18} />,
+    },
+    { to: "/stores", label: "Magazyny", icon: <Building2 size={18} /> },
   ];
 
   return (
     <BrowserRouter>
       <nav className="bg-white border-b shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between p-3">
-          <h1 className="text-lg font-semibold text-gray-700">Grid Showcase</h1>
-          <ul className="flex gap-4">
+          <h1 className="text-lg font-semibold text-gray-700">
+            Panel zarządzania
+          </h1>
+          <ul className="flex gap-3">
             {links.map(({ to, label, icon }) => (
               <li key={to}>
                 <NavLink
@@ -49,13 +62,12 @@ export default function App() {
       <main className="mx-auto max-w-6xl p-6">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/mui" element={<Mui />} />
-          <Route path="/shadcn" element={<Shadcn />} />
-          <Route path="/aggrid" element={<AgGrid />} />
-          <Route path="/devexpress" element={<DevExpress />} />
-          <Route path="/shops" element={<ShopsGrid />} />
-          <Route path="/devices" element={<DevicesGrid />} />
-          <Route path="/users" element={<UsersGrid />} />
+          <Route path="/products" element={<ProductsGrid />} />
+          <Route path="/contractors" element={<ContractorsGrid />} />
+          <Route path="/employees" element={<EmployeesGrid />} />
+          <Route path="/orders" element={<OrdersGrid />} />
+          <Route path="/orders-items" element={<OrdersItemsGrid />} />
+          <Route path="/stores" element={<StoresGrid />} />
         </Routes>
       </main>
     </BrowserRouter>

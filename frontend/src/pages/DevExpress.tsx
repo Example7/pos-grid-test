@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import DataGrid, {
-  Column,
   Paging,
   Pager,
   Editing,
@@ -18,20 +17,36 @@ import DataGrid, {
 } from "devextreme-react/data-grid";
 import CustomStore from "devextreme/data/custom_store";
 
-export default function DevExpressGrid() {
-  const apiUrl = "http://localhost:5135/odata/Products";
+type DevExpressGridProps = {
+  apiUrl: string;
+  title: string;
+  keyExpr?: string;
+  columns: ReactNode;
+  enableValidation?: boolean;
+};
+
+export default function DevExpressGrid({
+  apiUrl,
+  title,
+  keyExpr = "id",
+  columns,
+  enableValidation = false,
+}: DevExpressGridProps) {
   const [wrapEnabled, setWrapEnabled] = useState(false);
 
   const asyncValidation = async (params: any) => {
     try {
-      const res = await fetch(`http://localhost:5135/api/CheckNameUnique`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: params.data?.Id,
-          name: params.value,
-        }),
-      });
+      const res = await fetch(
+        `${apiUrl.replace("/odata/", "/api/")}CheckNameUnique`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: params.data?.[keyExpr],
+            name: params.value,
+          }),
+        }
+      );
       const result = await res.json();
       return result?.isUnique ?? true;
     } catch {
@@ -40,8 +55,8 @@ export default function DevExpressGrid() {
   };
 
   const dataSource = new CustomStore({
-    key: "Id",
-    load: async (loadOptions) => {
+    key: keyExpr,
+    load: async (loadOptions: any) => {
       try {
         const params = new URLSearchParams();
         const skip = loadOptions.skip ?? 0;
@@ -126,7 +141,7 @@ export default function DevExpressGrid() {
         const json = await response.json();
 
         return {
-          data: json.value,
+          data: json.value ?? json,
           totalCount: json["@odata.count"] ?? 0,
         };
       } catch (error) {
@@ -134,7 +149,7 @@ export default function DevExpressGrid() {
         throw error;
       }
     },
-    insert: async (values) => {
+    insert: async (values: any) => {
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,7 +158,7 @@ export default function DevExpressGrid() {
       if (!res.ok) throw new Error(`Błąd dodawania: ${res.status}`);
       return await res.json();
     },
-    update: async (key, values) => {
+    update: async (key: any, values: any) => {
       const res = await fetch(`${apiUrl}(${key})`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -152,7 +167,7 @@ export default function DevExpressGrid() {
       if (!res.ok) throw new Error(`Błąd aktualizacji: ${res.status}`);
       return await res.json();
     },
-    remove: async (key) => {
+    remove: async (key: any) => {
       const res = await fetch(`${apiUrl}(${key})`, { method: "DELETE" });
       if (!res.ok) throw new Error(`Błąd usuwania: ${res.status}`);
     },
@@ -161,12 +176,12 @@ export default function DevExpressGrid() {
   return (
     <div className="min-h-screen flex flex-col items-center py-10">
       <div className="w-full bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
-        <h2 className="text-2xl font-semibold mb-4">Products</h2>
+        <h2 className="text-2xl font-semibold mb-4">{title}</h2>
 
         <DataGrid
           dataSource={dataSource}
           remoteOperations={{ paging: true, sorting: true, filtering: true }}
-          keyExpr="Id"
+          keyExpr={keyExpr}
           showBorders
           rowAlternationEnabled
           hoverStateEnabled
@@ -184,16 +199,17 @@ export default function DevExpressGrid() {
 
           <Editing
             mode="batch"
-            allowUpdating
             allowAdding
+            allowUpdating
             allowDeleting
             useIcons
           />
 
           <Paging defaultPageSize={20} />
           <Pager
+            visible={true}
             showPageSizeSelector
-            allowedPageSizes={[10, 20, 50, 100]}
+            allowedPageSizes={[5, 10, 20, 50, 100]}
             showNavigationButtons
             showInfo
           />
@@ -216,102 +232,23 @@ export default function DevExpressGrid() {
             />
           </Toolbar>
 
-          <ColumnChooser enabled={true} mode="select" />
+          <ColumnChooser enabled mode="select" />
 
-          <Column dataField="Id" caption="ID" width={70} allowEditing={false} />
+          {columns}
 
-          <Column dataField="Name" caption="Nazwa produktu" width={180}>
-            <RequiredRule message="Nazwa produktu jest wymagana" />
-            <AsyncRule
-              message="Produkt o tej nazwie już istnieje"
-              validationCallback={asyncValidation}
-            />
-          </Column>
-
-          <Column dataField="Category" caption="Kategoria" width={130}>
-            <RequiredRule message="Podaj kategorię" />
-          </Column>
-
-          <Column
-            dataField="Price"
-            caption="Cena"
-            dataType="number"
-            format="#,##0.00 zł"
-            width={100}
-          >
-            <RequiredRule message="Cena jest wymagana" />
-            <PatternRule
-              pattern={/^[0-9]+(\.[0-9]{1,2})?$/}
-              message="Podaj poprawną liczbę"
-            />
-          </Column>
-
-          <Column dataField="Stock" caption="Stan" dataType="number" width={90}>
-            <PatternRule pattern={/^\d+$/} message="Stan musi być liczbą" />
-          </Column>
-
-          <Column
-            dataField="Discount"
-            caption="Zniżka (%)"
-            dataType="number"
-            width={120}
-          >
-            <PatternRule
-              pattern={/^(?:[0-9]|[1-9][0-9]|100)$/}
-              message="Zniżka musi być w zakresie 0–100"
-            />
-          </Column>
-
-          <Column dataField="Brand" caption="Marka" width={110}>
-            <RequiredRule message="Podaj markę" />
-          </Column>
-
-          <Column dataField="Supplier" caption="Dostawca" width={130} />
-          <Column dataField="Warehouse" caption="Magazyn" width={130} />
-          <Column dataField="Color" caption="Kolor" width={100} />
-          <Column dataField="Size" caption="Rozmiar" width={100} />
-
-          <Column
-            dataField="Rating"
-            caption="Ocena"
-            dataType="number"
-            width={90}
-          >
-            <PatternRule
-              pattern={/^[0-5](\.\d{1})?$/}
-              message="Ocena 0–5 z dokładnością do 0.1"
-            />
-          </Column>
-
-          <Column
-            dataField="Active"
-            caption="Aktywny"
-            dataType="boolean"
-            width={120}
-          />
-
-          <Column
-            dataField="CreatedAt"
-            caption="Utworzono"
-            dataType="date"
-            width={130}
-            allowEditing={false}
-          />
-
-          <Column
-            dataField="UpdatedAt"
-            caption="Zaktualizowano"
-            dataType="date"
-            width={170}
-            allowEditing={false}
-          />
-
-          <Column dataField="Description" caption="Opis" minWidth={150}>
-            <PatternRule
-              pattern={/^.{0,500}$/}
-              message="Opis nie może przekraczać 500 znaków"
-            />
-          </Column>
+          {enableValidation && (
+            <>
+              <RequiredRule message="To pole jest wymagane" />
+              <PatternRule
+                pattern={/^[0-9]+(\.[0-9]{1,2})?$/}
+                message="Podaj poprawną liczbę"
+              />
+              <AsyncRule
+                message="Wartość nie jest unikalna"
+                validationCallback={asyncValidation}
+              />
+            </>
+          )}
         </DataGrid>
       </div>
     </div>
