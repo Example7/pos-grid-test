@@ -1,11 +1,13 @@
 ﻿using DevExpress.Data;
-using DevExpress.Models;
+using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +39,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddDbContext<AppDbContext>(opt =>
+builder.Services.AddDbContext<SupabaseDbContext>(opt =>
     opt.UseNpgsql(connectionString, b =>
     {
         b.CommandTimeout(120);
@@ -62,18 +64,55 @@ builder.Services.AddControllers()
 IEdmModel GetEdmModel()
 {
     var modelBuilder = new ODataConventionModelBuilder();
+
+    // --- Produkty i powiązania ---
     modelBuilder.EntitySet<Product>("Products");
+    modelBuilder.EntitySet<ProductsCategories1>("ProductsCategories1");
+    modelBuilder.EntitySet<ProductsCategories2>("ProductsCategories2");
+    modelBuilder.EntitySet<ProductsQuantityUnit>("ProductsQuantityUnits");
+    modelBuilder.EntitySet<ProductsVatRate>("ProductsVatRates");
+
+    // --- Zamówienia ---
+    modelBuilder.EntitySet<Order>("Orders");
+    modelBuilder.EntitySet<OrdersItem>("OrdersItems");
+    modelBuilder.EntitySet<OrdersPaymentsStatus>("OrdersPaymentsStatuses");
+    modelBuilder.EntitySet<OrdersRealizationsStatus>("OrdersRealizationsStatuses");
+    modelBuilder.EntitySet<OrdersRealizationsType>("OrdersRealizationsTypes");
+
+    // --- Finanse / sprzedaż ---
+    modelBuilder.EntitySet<Outcome>("Outcomes");
+    modelBuilder.EntitySet<OutcomesItem>("OutcomesItems");
+    modelBuilder.EntitySet<OutcomesStatus>("OutcomesStatuses");
+    modelBuilder.EntitySet<OutcomesFinancialDocument>("OutcomesFinancialDocuments");
+    modelBuilder.EntitySet<OutcomesFinancialDocumentsItem>("OutcomesFinancialDocumentsItems");
+    modelBuilder.EntitySet<OutcomesFinancialDocumentsStatus>("OutcomesFinancialDocumentsStatuses");
+    modelBuilder.EntitySet<OutcomesFinancialDocumentsVatSummary>("OutcomesFinancialDocumentsVatSummaries");
+
+    // --- Sklepy, magazyny, POS ---
     modelBuilder.EntitySet<Shop>("Shops");
-    modelBuilder.EntitySet<Device>("Devices");
-    modelBuilder.EntitySet<User>("Users");
+    modelBuilder.EntitySet<Store>("Stores");
+    modelBuilder.EntitySet<Pose>("Poses");
+    modelBuilder.EntitySet<PosesType>("PosesTypes");
+
+    // --- Pracownicy i kontrahenci ---
+    modelBuilder.EntitySet<Employee>("Employees");
+    modelBuilder.EntitySet<Contractor>("Contractors");
+    modelBuilder.EntitySet<Country>("Countries");
+
+    // --- Metody płatności ---
+    modelBuilder.EntitySet<PaymentsMethod>("PaymentsMethods");
+
     return modelBuilder.GetEdmModel();
 }
+
+
+
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<SupabaseDbContext>();
     try
     {
         Console.WriteLine(">>> Checking database connection...");
