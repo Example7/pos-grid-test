@@ -11,53 +11,32 @@ import DataGrid, {
   HeaderFilter,
   FilterPanel,
   ColumnChooser,
-  RequiredRule,
-  PatternRule,
-  AsyncRule,
 } from "devextreme-react/data-grid";
 import CustomStore from "devextreme/data/custom_store";
 
 type DevExpressGridProps = {
   apiUrl: string;
+  readUrl?: string; // ← nowy parametr
   title: string;
   keyExpr?: string;
   columns: ReactNode;
-  enableValidation?: boolean;
 };
 
 export default function DevExpressGrid({
   apiUrl,
+  readUrl,
   title,
   keyExpr = "id",
   columns,
-  enableValidation = false,
 }: DevExpressGridProps) {
   const [wrapEnabled, setWrapEnabled] = useState(false);
 
-  const asyncValidation = async (params: any) => {
-    try {
-      const res = await fetch(
-        `${apiUrl.replace("/odata/", "/api/")}CheckNameUnique`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: params.data?.[keyExpr],
-            name: params.value,
-          }),
-        }
-      );
-      const result = await res.json();
-      return result?.isUnique ?? true;
-    } catch {
-      return true;
-    }
-  };
-
-  const dataSource = new CustomStore({
+  const store = new CustomStore({
     key: keyExpr,
+
     load: async (loadOptions: any) => {
       try {
+        const url = readUrl || apiUrl;
         const params = new URLSearchParams();
         const skip = loadOptions.skip ?? 0;
         const top = loadOptions.take ?? 20;
@@ -80,16 +59,12 @@ export default function DevExpressGrid({
           }
         }
 
-        // Filtrowanie
+        // Filtrowanie (proste)
         if (loadOptions.filter) {
-          type DevExtremeFilter =
-            | [string, string, string | number | boolean]
-            | (string | DevExtremeFilter)[];
-
-          const buildFilter = (filter: DevExtremeFilter): string => {
+          const buildFilter = (filter: any): string => {
             if (Array.isArray(filter[0])) {
-              return (filter as (string | DevExtremeFilter)[])
-                .map((f) =>
+              return (filter as any[])
+                .map((f: any) =>
                   Array.isArray(f)
                     ? buildFilter(f)
                     : f === "and" || f === "or"
@@ -99,46 +74,42 @@ export default function DevExpressGrid({
                 .join(" ");
             }
 
-            const [field, operator, value] = filter;
-            const val =
-              typeof value === "string"
-                ? `'${value.replace(/'/g, "''")}'`
-                : value;
-
-            switch (operator) {
+            const [field, op, val] = filter;
+            const value =
+              typeof val === "string" ? `'${val.replace(/'/g, "''")}'` : val;
+            switch (op) {
               case "=":
-                return `${field} eq ${val}`;
+                return `${field} eq ${value}`;
               case "<>":
-                return `${field} ne ${val}`;
+                return `${field} ne ${value}`;
               case ">":
-                return `${field} gt ${val}`;
+                return `${field} gt ${value}`;
               case "<":
-                return `${field} lt ${val}`;
+                return `${field} lt ${value}`;
               case ">=":
-                return `${field} ge ${val}`;
+                return `${field} ge ${value}`;
               case "<=":
-                return `${field} le ${val}`;
+                return `${field} le ${value}`;
               case "contains":
-                return `contains(${field}, ${val})`;
+                return `contains(${field}, ${value})`;
               case "startswith":
-                return `startswith(${field}, ${val})`;
+                return `startswith(${field}, ${value})`;
               case "endswith":
-                return `endswith(${field}, ${val})`;
+                return `endswith(${field}, ${value})`;
               default:
                 return "";
             }
           };
-
           const filterQuery = buildFilter(loadOptions.filter);
           if (filterQuery) params.append("$filter", filterQuery);
         }
 
-        const response = await fetch(`${apiUrl}?${params.toString()}`, {
+        const separator = url.includes("?") ? "&" : "?";
+        const res = await fetch(`${url}${separator}${params.toString()}`, {
           headers: { Accept: "application/json;odata.metadata=minimal" },
         });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const json = await response.json();
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
 
         return {
           data: json.value ?? json,
@@ -149,7 +120,8 @@ export default function DevExpressGrid({
         throw error;
       }
     },
-    insert: async (values: any) => {
+
+    insert: async (values) => {
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,16 +130,17 @@ export default function DevExpressGrid({
       if (!res.ok) throw new Error(`Błąd dodawania: ${res.status}`);
       return await res.json();
     },
-    update: async (key: any, values: any) => {
+
+    update: async (key, values) => {
       const res = await fetch(`${apiUrl}(${key})`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
       if (!res.ok) throw new Error(`Błąd aktualizacji: ${res.status}`);
-      return await res.json();
     },
-    remove: async (key: any) => {
+
+    remove: async (key) => {
       const res = await fetch(`${apiUrl}(${key})`, { method: "DELETE" });
       if (!res.ok) throw new Error(`Błąd usuwania: ${res.status}`);
     },
@@ -179,9 +152,8 @@ export default function DevExpressGrid({
         <h2 className="text-2xl font-semibold mb-4">{title}</h2>
 
         <DataGrid
-          dataSource={dataSource}
+          dataSource={store}
           remoteOperations={{ paging: true, sorting: true, filtering: true }}
-          keyExpr={keyExpr}
           showBorders
           rowAlternationEnabled
           hoverStateEnabled
@@ -207,7 +179,7 @@ export default function DevExpressGrid({
 
           <Paging defaultPageSize={20} />
           <Pager
-            visible={true}
+            visible
             showPageSizeSelector
             allowedPageSizes={[5, 10, 20, 50, 100]}
             showNavigationButtons
@@ -233,22 +205,7 @@ export default function DevExpressGrid({
           </Toolbar>
 
           <ColumnChooser enabled mode="select" />
-
           {columns}
-
-          {enableValidation && (
-            <>
-              <RequiredRule message="To pole jest wymagane" />
-              <PatternRule
-                pattern={/^[0-9]+(\.[0-9]{1,2})?$/}
-                message="Podaj poprawną liczbę"
-              />
-              <AsyncRule
-                message="Wartość nie jest unikalna"
-                validationCallback={asyncValidation}
-              />
-            </>
-          )}
         </DataGrid>
       </div>
     </div>
