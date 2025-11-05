@@ -1,9 +1,10 @@
-using DevExpress.Data;
+﻿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,58 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Shops
+        // GET: odata/Shop
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.Shops);
-
-        // GET: odata/Shops(1)
-        [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get()
         {
-            var shop = _context.Shops.FirstOrDefault(s => s.Id == key);
-            return shop == null ? NotFound() : Ok(shop);
+            var query = _context.Set<Shop>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/Shops
+        // GET: odata/Shop(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<Shop>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/Shop
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Shop shop)
+        public async Task<IActionResult> Post([FromBody] Shop entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(shop.ShopName))
-                return BadRequest("Pole 'ShopName' jest wymagane.");
-
-            shop.CreatedAt = DateTime.UtcNow;
-
-            _context.Shops.Add(shop);
+            _context.Set<Shop>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(shop);
+            return Created(entity);
         }
 
-        // PATCH: odata/Shops(1)
+        // PATCH: odata/Shop(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<Shop> patch)
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Shop> patch)
         {
-            var shop = await _context.Shops.FindAsync(key);
-            if (shop == null)
+            var entity = await _context.Set<Shop>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            patch.Patch(shop);
-
+            patch.Patch(entity);
             await _context.SaveChangesAsync();
-            return Ok(shop);
+            return Ok(entity);
         }
 
-        // DELETE: odata/Shops(1)
+        // DELETE: odata/Shop(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(long key)
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var shop = await _context.Shops.FindAsync(key);
-            if (shop == null)
+            var entity = await _context.Set<Shop>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            _context.Shops.Remove(shop);
+            _context.Set<Shop>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

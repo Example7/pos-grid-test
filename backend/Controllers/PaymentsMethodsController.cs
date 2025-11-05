@@ -1,9 +1,10 @@
+﻿using DevExpress.Data;
+using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.AspNetCore.OData.Deltas;
-using DevExpress.Models.Generated;
-using DevExpress.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,36 +17,40 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/PaymentsMethods
+        // GET: odata/PaymentsMethod
         [EnableQuery]
         public IActionResult Get()
         {
-            return Ok(_context.PaymentsMethods);
+            var query = _context.Set<PaymentsMethod>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // GET: odata/PaymentsMethods(5)
+        // GET: odata/PaymentsMethod(key)
         [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get([FromRoute] Guid key)
         {
-            var entity = _context.PaymentsMethods.FirstOrDefault(p => p.PaymentMethodId == key);
+            var entity = _context.Set<PaymentsMethod>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/PaymentsMethods
-        public async Task<IActionResult> Post([FromBody] PaymentsMethod method)
+        // POST: odata/PaymentsMethod
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] PaymentsMethod entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.PaymentsMethods.Add(method);
+            _context.Set<PaymentsMethod>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(method);
+            return Created(entity);
         }
 
-        // PATCH: odata/PaymentsMethods(5)
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<PaymentsMethod> patch)
+        // PATCH: odata/PaymentsMethod(key)
+        [HttpPatch]
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<PaymentsMethod> patch)
         {
-            var entity = await _context.PaymentsMethods.FindAsync(key);
+            var entity = await _context.Set<PaymentsMethod>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
@@ -54,14 +59,15 @@ namespace DevExpress.Controllers
             return Ok(entity);
         }
 
-        // DELETE: odata/PaymentsMethods(5)
-        public async Task<IActionResult> Delete(long key)
+        // DELETE: odata/PaymentsMethod(key)
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var entity = await _context.PaymentsMethods.FindAsync(key);
+            var entity = await _context.Set<PaymentsMethod>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.PaymentsMethods.Remove(entity);
+            _context.Set<PaymentsMethod>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

@@ -1,9 +1,10 @@
-using DevExpress.Data;
+﻿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,58 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/ProductsQuantityUnits
+        // GET: odata/ProductsQuantityUnit
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.ProductsQuantityUnits);
-
-        // GET: odata/ProductsQuantityUnits(1)
-        [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get()
         {
-            var item = _context.ProductsQuantityUnits.FirstOrDefault(c => c.ProductQuantityUnitId == key);
-            return item == null ? NotFound() : Ok(item);
+            var query = _context.Set<ProductsQuantityUnit>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/ProductsQuantityUnits
+        // GET: odata/ProductsQuantityUnit(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<ProductsQuantityUnit>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/ProductsQuantityUnit
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ProductsQuantityUnit entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(entity.UnitName))
-                return BadRequest("Pole 'ProductQuantityUnitName' jest wymagane.");
-
-            entity.CreatedAt = DateTime.UtcNow;
-
-            _context.ProductsQuantityUnits.Add(entity);
+            _context.Set<ProductsQuantityUnit>().Add(entity);
             await _context.SaveChangesAsync();
             return Created(entity);
         }
 
-        // PATCH: odata/ProductsQuantityUnits(1)
+        // PATCH: odata/ProductsQuantityUnit(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<ProductsQuantityUnit> patch)
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<ProductsQuantityUnit> patch)
         {
-            var entity = await _context.ProductsQuantityUnits.FindAsync(key);
+            var entity = await _context.Set<ProductsQuantityUnit>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
             patch.Patch(entity);
-
             await _context.SaveChangesAsync();
             return Ok(entity);
         }
 
-        // DELETE: odata/ProductsQuantityUnits(1)
+        // DELETE: odata/ProductsQuantityUnit(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(long key)
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var entity = await _context.ProductsQuantityUnits.FindAsync(key);
+            var entity = await _context.Set<ProductsQuantityUnit>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.ProductsQuantityUnits.Remove(entity);
+            _context.Set<ProductsQuantityUnit>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

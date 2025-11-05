@@ -1,9 +1,10 @@
+﻿using DevExpress.Data;
+using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.AspNetCore.OData.Deltas;
-using DevExpress.Models.Generated;
-using DevExpress.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,36 +17,40 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Poses
+        // GET: odata/Pose
         [EnableQuery]
         public IActionResult Get()
         {
-            return Ok(_context.Poses);
+            var query = _context.Set<Pose>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // GET: odata/Poses(5)
+        // GET: odata/Pose(key)
         [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get([FromRoute] Guid key)
         {
-            var entity = _context.Poses.FirstOrDefault(p => p.PosId == key);
+            var entity = _context.Set<Pose>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/Poses
-        public async Task<IActionResult> Post([FromBody] Pose pose)
+        // POST: odata/Pose
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] Pose entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.Poses.Add(pose);
+            _context.Set<Pose>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(pose);
+            return Created(entity);
         }
 
-        // PATCH: odata/Poses(5)
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<Pose> patch)
+        // PATCH: odata/Pose(key)
+        [HttpPatch]
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Pose> patch)
         {
-            var entity = await _context.Poses.FindAsync(key);
+            var entity = await _context.Set<Pose>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
@@ -54,14 +59,15 @@ namespace DevExpress.Controllers
             return Ok(entity);
         }
 
-        // DELETE: odata/Poses(5)
-        public async Task<IActionResult> Delete(long key)
+        // DELETE: odata/Pose(key)
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var entity = await _context.Poses.FindAsync(key);
+            var entity = await _context.Set<Pose>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.Poses.Remove(entity);
+            _context.Set<Pose>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

@@ -1,9 +1,10 @@
+﻿using DevExpress.Data;
+using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.AspNetCore.OData.Deltas;
-using DevExpress.Data;
-using DevExpress.Models.Generated;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,48 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/OutcomesFinancialDocuments
+        // GET: odata/OutcomesFinancialDocument
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.OutcomesFinancialDocuments);
-
-        // GET: odata/OutcomesFinancialDocuments(<GUID>)
-        [EnableQuery]
-        public IActionResult Get(Guid key)
+        public IActionResult Get()
         {
-            var doc = _context.OutcomesFinancialDocuments
-                .FirstOrDefault(d => d.OutcomeFinancialDocumentId == key);
-            return doc == null ? NotFound() : Ok(doc);
+            var query = _context.Set<OutcomesFinancialDocument>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/OutcomesFinancialDocuments
-        public async Task<IActionResult> Post([FromBody] OutcomesFinancialDocument doc)
+        // GET: odata/OutcomesFinancialDocument(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<OutcomesFinancialDocument>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/OutcomesFinancialDocument
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] OutcomesFinancialDocument entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.OutcomesFinancialDocuments.Add(doc);
+            _context.Set<OutcomesFinancialDocument>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(doc);
+            return Created(entity);
         }
 
-        // PATCH: odata/OutcomesFinancialDocuments(<GUID>)
+        // PATCH: odata/OutcomesFinancialDocument(key)
+        [HttpPatch]
         public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<OutcomesFinancialDocument> patch)
         {
-            var doc = await _context.OutcomesFinancialDocuments.FindAsync(key);
-            if (doc == null) return NotFound();
+            var entity = await _context.Set<OutcomesFinancialDocument>().FindAsync(key);
+            if (entity == null)
+                return NotFound();
 
-            patch.Patch(doc);
+            patch.Patch(entity);
             await _context.SaveChangesAsync();
-            return Ok(doc);
+            return Ok(entity);
         }
 
-        // DELETE: odata/OutcomesFinancialDocuments(<GUID>)
+        // DELETE: odata/OutcomesFinancialDocument(key)
+        [HttpDelete]
         public async Task<IActionResult> Delete(Guid key)
         {
-            var doc = await _context.OutcomesFinancialDocuments.FindAsync(key);
-            if (doc == null) return NotFound();
+            var entity = await _context.Set<OutcomesFinancialDocument>().FindAsync(key);
+            if (entity == null)
+                return NotFound();
 
-            _context.OutcomesFinancialDocuments.Remove(doc);
+            _context.Set<OutcomesFinancialDocument>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

@@ -149,7 +149,7 @@ export default function OrdersItemsGrid() {
             dataField="OrderItemGrossValue"
             caption="Wartość brutto"
             dataType="number"
-            width={150}
+            width={140}
           />
 
           <Column

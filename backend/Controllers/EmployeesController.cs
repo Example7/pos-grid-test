@@ -1,9 +1,10 @@
-using DevExpress.Data;
+﻿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,59 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Employees
+        // GET: odata/Employee
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.Employees);
-
-        // GET: odata/Employees(1)
-        [EnableQuery]
-        public IActionResult Get(Guid key)
+        public IActionResult Get()
         {
-            var employee = _context.Employees.FirstOrDefault(e => e.EmployeeId == key);
-            return employee == null ? NotFound() : Ok(employee);
+            var query = _context.Set<Employee>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/Employees
+        // GET: odata/Employee(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<Employee>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/Employee
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Employee employee)
+        public async Task<IActionResult> Post([FromBody] Employee entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(employee.EmployeeName))
-                return BadRequest("Pole 'EmployeeName' jest wymagane.");
-
-            // Automatyczne daty
-            employee.CreatedAt = DateTime.UtcNow;
-
-            _context.Employees.Add(employee);
+            _context.Set<Employee>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(employee);
+            return Created(entity);
         }
 
-        // PATCH: odata/Employees(1)
+        // PATCH: odata/Employee(key)
         [HttpPatch]
         public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Employee> patch)
         {
-            var employee = await _context.Employees.FindAsync(key);
-            if (employee == null)
+            var entity = await _context.Set<Employee>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            patch.Patch(employee);
-
+            patch.Patch(entity);
             await _context.SaveChangesAsync();
-            return Ok(employee);
+            return Ok(entity);
         }
 
-        // DELETE: odata/Employees(1)
+        // DELETE: odata/Employee(key)
         [HttpDelete]
         public async Task<IActionResult> Delete(Guid key)
         {
-            var employee = await _context.Employees.FindAsync(key);
-            if (employee == null)
+            var entity = await _context.Set<Employee>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            _context.Employees.Remove(employee);
+            _context.Set<Employee>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

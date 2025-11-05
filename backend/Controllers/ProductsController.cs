@@ -1,4 +1,4 @@
-using DevExpress.Data;
+ï»¿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
@@ -17,76 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Products
+        // GET: odata/Product
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.Products
-            .Include(p => p.ProductCategory1)
-            .Include(p => p.ProductCategory2)
-            .Include(p => p.ProductQuantityUnit)
-            .Include(p => p.ProductVatRate)
-            .Include(p => p.Supplier)
-        );
-
-        // GET: odata/Products(1)
-        [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get()
         {
-            var product = _context.Products
-                .Include(p => p.ProductCategory1)
-                .Include(p => p.ProductCategory2)
-                .Include(p => p.ProductQuantityUnit)
-                .Include(p => p.ProductVatRate)
-                .Include(p => p.Supplier)
-                .FirstOrDefault(p => p.ProductId == key);
+            var query = _context.Set<Product>().AsQueryable();
 
-            return product == null ? NotFound() : Ok(product);
+            return Ok(query);
         }
 
-        // POST: odata/Products
+        // GET: odata/Product(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<Product>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/Product
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Product product)
+        public async Task<IActionResult> Post([FromBody] Product entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(product.ProductName))
-                return BadRequest("Pole 'ProductName' jest wymagane.");
-
-            if (product.ProductPrice < 0)
-                return BadRequest("Cena produktu nie mo¿e byæ ujemna.");
-
-            product.CreatedAt = DateTime.UtcNow;
-            product.UpdatedAt = DateTime.UtcNow;
-
-            _context.Products.Add(product);
+            _context.Set<Product>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(product);
+            return Created(entity);
         }
 
-        // PATCH: odata/Products(1)
+        // PATCH: odata/Product(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<Product> patch)
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Product> patch)
         {
-            var product = await _context.Products.FindAsync(key);
-            if (product == null)
+            var entity = await _context.Set<Product>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            patch.Patch(product);
-            product.UpdatedAt = DateTime.UtcNow;
-
+            patch.Patch(entity);
             await _context.SaveChangesAsync();
-            return Ok(product);
+            return Ok(entity);
         }
 
-        // DELETE: odata/Products(1)
+        // DELETE: odata/Product(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(long key)
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var product = await _context.Products.FindAsync(key);
-            if (product == null)
+            var entity = await _context.Set<Product>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            _context.Products.Remove(product);
+            _context.Set<Product>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

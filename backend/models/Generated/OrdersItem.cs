@@ -20,8 +20,6 @@ public partial class OrdersItem
 
     public decimal OrderItemPrice { get; set; }
 
-    public decimal OrderItemTotal { get; set; }
-
     public DateTime OrderItemCreatedAt { get; set; }
 
     public long? SetItemProductId { get; set; }

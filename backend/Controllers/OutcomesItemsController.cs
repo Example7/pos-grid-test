@@ -1,9 +1,10 @@
-using DevExpress.Data;
+ï»¿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,78 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/OutcomesItems
+        // GET: odata/OutcomesItem
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.OutcomesItems);
-
-        // GET: odata/OutcomesItems(key)
-        [EnableQuery]
-        public IActionResult Get(Guid key)
+        public IActionResult Get()
         {
-            var item = _context.OutcomesItems.FirstOrDefault(x => x.OutcomeItemId == key);
-            return item == null ? NotFound() : Ok(item);
+            var query = _context.Set<OutcomesItem>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/OutcomesItems
+        // GET: odata/OutcomesItem(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<OutcomesItem>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/OutcomesItem
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] OutcomesItem entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            entity.OutcomeItemId = Guid.NewGuid();
-            entity.CreatedAt = DateTime.UtcNow;
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            // automatyczne obliczenia, jeœli dane dostêpne
-            if (entity.Quantity > 0)
-            {
-                entity.CostValue = Math.Round(entity.CostPrice * entity.Quantity, 2);
-                if (entity.NetPrice.HasValue)
-                    entity.NetValue = Math.Round(entity.NetPrice.Value * entity.Quantity, 2);
-                if (entity.GrossPrice.HasValue)
-                    entity.GrossValue = Math.Round(entity.GrossPrice.Value * entity.Quantity, 2);
-            }
-
-            _context.OutcomesItems.Add(entity);
+            _context.Set<OutcomesItem>().Add(entity);
             await _context.SaveChangesAsync();
             return Created(entity);
         }
 
-        // PATCH: odata/OutcomesItems(key)
+        // PATCH: odata/OutcomesItem(key)
         [HttpPatch]
         public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<OutcomesItem> patch)
         {
-            var entity = await _context.OutcomesItems.FindAsync(key);
+            var entity = await _context.Set<OutcomesItem>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
             patch.Patch(entity);
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            // przelicz wartoœci, jeœli Quantity lub ceny siê zmieni³y
-            if (entity.Quantity > 0)
-            {
-                entity.CostValue = Math.Round(entity.CostPrice * entity.Quantity, 2);
-                if (entity.NetPrice.HasValue)
-                    entity.NetValue = Math.Round(entity.NetPrice.Value * entity.Quantity, 2);
-                if (entity.GrossPrice.HasValue)
-                    entity.GrossValue = Math.Round(entity.GrossPrice.Value * entity.Quantity, 2);
-            }
-
             await _context.SaveChangesAsync();
             return Ok(entity);
         }
 
-        // DELETE: odata/OutcomesItems(key)
+        // DELETE: odata/OutcomesItem(key)
         [HttpDelete]
         public async Task<IActionResult> Delete(Guid key)
         {
-            var entity = await _context.OutcomesItems.FindAsync(key);
+            var entity = await _context.Set<OutcomesItem>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.OutcomesItems.Remove(entity);
+            _context.Set<OutcomesItem>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

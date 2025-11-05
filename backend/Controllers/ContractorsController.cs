@@ -1,9 +1,10 @@
-using DevExpress.Data;
+ï»¿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,59 +17,57 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Contractors
+        // GET: odata/Contractor
         [EnableQuery]
-        public IActionResult Get() => Ok(_context.Contractors);
-
-        // GET: odata/Contractors(1)
-        [EnableQuery]
-        public IActionResult Get(Guid key)
+        public IActionResult Get()
         {
-            var contractor = _context.Contractors.FirstOrDefault(c => c.ContractorId == key);
-            return contractor == null ? NotFound() : Ok(contractor);
+            var query = _context.Set<Contractor>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // POST: odata/Contractors
+        // GET: odata/Contractor(key)
+        [EnableQuery]
+        public IActionResult Get([FromRoute] Guid key)
+        {
+            var entity = _context.Set<Contractor>().Find(key);
+            return entity == null ? NotFound() : Ok(entity);
+        }
+
+        // POST: odata/Contractor
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Contractor contractor)
+        public async Task<IActionResult> Post([FromBody] Contractor entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Przyk³adowa walidacja: nazwa kontrahenta nie mo¿e byæ pusta
-            if (string.IsNullOrWhiteSpace(contractor.ContractorName))
-                return BadRequest("Pole 'ContractorName' jest wymagane.");
-
-            contractor.CreatedAt = DateTime.UtcNow;
-
-            _context.Contractors.Add(contractor);
+            _context.Set<Contractor>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(contractor);
+            return Created(entity);
         }
 
-        // PATCH: odata/Contractors(1)
+        // PATCH: odata/Contractor(key)
         [HttpPatch]
         public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Contractor> patch)
         {
-            var contractor = await _context.Contractors.FindAsync(key);
-            if (contractor == null)
+            var entity = await _context.Set<Contractor>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            patch.Patch(contractor);
-
+            patch.Patch(entity);
             await _context.SaveChangesAsync();
-            return Ok(contractor);
+            return Ok(entity);
         }
 
-        // DELETE: odata/Contractors(1)
+        // DELETE: odata/Contractor(key)
         [HttpDelete]
         public async Task<IActionResult> Delete(Guid key)
         {
-            var contractor = await _context.Contractors.FindAsync(key);
-            if (contractor == null)
+            var entity = await _context.Set<Contractor>().FindAsync(key);
+            if (entity == null)
                 return NotFound();
 
-            _context.Contractors.Remove(contractor);
+            _context.Set<Contractor>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

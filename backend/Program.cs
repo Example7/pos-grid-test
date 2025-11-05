@@ -6,8 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,8 +40,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddDbContext<SupabaseDbContext>(opt =>
     opt.UseNpgsql(connectionString, b =>
     {
-        b.CommandTimeout(120);
-        b.EnableRetryOnFailure();
+        b.CommandTimeout(30);
+        b.EnableRetryOnFailure(2);
     }));
 
 builder.Services.AddCors(options =>
@@ -57,7 +55,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers()
     .AddOData(opt =>
-        opt.Select().Filter().OrderBy().Count().Expand().SetMaxTop(1000)
+        opt.Select().Filter().OrderBy().Count().Expand().SetMaxTop(100)
            .AddRouteComponents("odata", GetEdmModel())
     );
 
@@ -105,9 +103,6 @@ IEdmModel GetEdmModel()
     return modelBuilder.GetEdmModel();
 }
 
-
-
-
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -116,9 +111,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         Console.WriteLine(">>> Checking database connection...");
-        db.Database.OpenConnection();
-        Console.WriteLine("Connected successfully to database.");
-        db.Database.CloseConnection();
+        var canConnect = await db.Database.CanConnectAsync();
+        Console.WriteLine(canConnect
+            ? "Connected successfully to database."
+            : "Database connection test failed (no response).");
     }
     catch (Exception ex)
     {
@@ -143,8 +139,10 @@ app.Use(async (context, next) =>
     }
     catch (OperationCanceledException)
     {
+        if (!context.Response.HasStarted)
+            context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+
         Console.WriteLine("Request został anulowany przez klienta.");
-        context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
     }
     catch (Exception ex)
     {
@@ -157,4 +155,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();

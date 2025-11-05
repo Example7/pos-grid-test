@@ -1,9 +1,10 @@
+﻿using DevExpress.Data;
+using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.AspNetCore.OData.Deltas;
-using DevExpress.Models.Generated;
-using DevExpress.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -16,37 +17,40 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/OrdersRealizationsTypes
+        // GET: odata/OrdersRealizationsType
         [EnableQuery]
         public IActionResult Get()
         {
-            return Ok(_context.OrdersRealizationsTypes);
+            var query = _context.Set<OrdersRealizationsType>().AsQueryable();
+
+            return Ok(query);
         }
 
-        // GET: odata/OrdersRealizationsTypes(5)
+        // GET: odata/OrdersRealizationsType(key)
         [EnableQuery]
-        public IActionResult Get(long key)
+        public IActionResult Get([FromRoute] Guid key)
         {
-            var entity = _context.OrdersRealizationsTypes
-                .FirstOrDefault(o => o.OrderRealizationTypeId == key);
+            var entity = _context.Set<OrdersRealizationsType>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/OrdersRealizationsTypes
-        public async Task<IActionResult> Post([FromBody] OrdersRealizationsType type)
+        // POST: odata/OrdersRealizationsType
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] OrdersRealizationsType entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.OrdersRealizationsTypes.Add(type);
+            _context.Set<OrdersRealizationsType>().Add(entity);
             await _context.SaveChangesAsync();
-            return Created(type);
+            return Created(entity);
         }
 
-        // PATCH: odata/OrdersRealizationsTypes(5)
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<OrdersRealizationsType> patch)
+        // PATCH: odata/OrdersRealizationsType(key)
+        [HttpPatch]
+        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<OrdersRealizationsType> patch)
         {
-            var entity = await _context.OrdersRealizationsTypes.FindAsync(key);
+            var entity = await _context.Set<OrdersRealizationsType>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
@@ -55,14 +59,15 @@ namespace DevExpress.Controllers
             return Ok(entity);
         }
 
-        // DELETE: odata/OrdersRealizationsTypes(5)
-        public async Task<IActionResult> Delete(long key)
+        // DELETE: odata/OrdersRealizationsType(key)
+        [HttpDelete]
+        public async Task<IActionResult> Delete(Guid key)
         {
-            var entity = await _context.OrdersRealizationsTypes.FindAsync(key);
+            var entity = await _context.Set<OrdersRealizationsType>().FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.OrdersRealizationsTypes.Remove(entity);
+            _context.Set<OrdersRealizationsType>().Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

@@ -996,7 +996,7 @@ public partial class SupabaseDbContext : DbContext
             entity.Property(e => e.OrderItemOriginQuantity).HasColumnName("order_item_origin_quantity");
             entity.Property(e => e.OrderItemPrice)
                 .HasPrecision(12, 2)
-                .HasColumnName("order_item_price");
+                .HasColumnName("order_item_net_price");
             entity.Property(e => e.OrderItemProductDiscountPercentRatio)
                 .HasPrecision(6, 2)
                 .HasComment("Procent rabatu produktu")
@@ -1011,9 +1011,6 @@ public partial class SupabaseDbContext : DbContext
                 .HasPrecision(6, 2)
                 .HasComment("Procent rabatu pozycji zestawu")
                 .HasColumnName("order_item_set_item_discount_percent_ratio");
-            entity.Property(e => e.OrderItemTotal)
-                .HasPrecision(12, 2)
-                .HasColumnName("order_item_total");
             entity.Property(e => e.OrderItemVatRateRatio)
                 .HasPrecision(6, 2)
                 .HasComment("Stawka VAT pozycji")
