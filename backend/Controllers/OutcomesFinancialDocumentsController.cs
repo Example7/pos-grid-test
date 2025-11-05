@@ -17,24 +17,40 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/OutcomesFinancialDocument
+        // LISTA: odata/OutcomesFinancialDocuments
         [EnableQuery]
         public IActionResult Get()
         {
-            var query = _context.Set<OutcomesFinancialDocument>().AsQueryable();
+            var query = _context.OutcomesFinancialDocuments
+                .Include(d => d.OutcomesFinancialDocumentsItems)
+                    .ThenInclude(i => i.Product)              // jeśli w Items jest nawigacja Product
+                .Include(d => d.OutcomesFinancialDocumentsVatSummaries)
+                .Include(d => d.FinancialDocumentType)
+                .Include(d => d.FinancialDocumentStatus)
+                .Include(d => d.Contractor)
+                .AsNoTracking();
 
             return Ok(query);
         }
 
-        // GET: odata/OutcomesFinancialDocument(key)
+        // POJEDYNCZY: odata/OutcomesFinancialDocuments(key)
         [EnableQuery]
         public IActionResult Get([FromRoute] Guid key)
         {
-            var entity = _context.Set<OutcomesFinancialDocument>().Find(key);
-            return entity == null ? NotFound() : Ok(entity);
+            var query = _context.OutcomesFinancialDocuments
+                .Where(d => d.OutcomeFinancialDocumentId == key)
+                .Include(d => d.OutcomesFinancialDocumentsItems)
+                    .ThenInclude(i => i.Product)              // jw.
+                .Include(d => d.OutcomesFinancialDocumentsVatSummaries)
+                .Include(d => d.FinancialDocumentType)
+                .Include(d => d.FinancialDocumentStatus)
+                .Include(d => d.Contractor)
+                .AsNoTracking();
+
+            return Ok(query);
         }
 
-        // POST: odata/OutcomesFinancialDocument
+        // POST, PATCH, DELETE bez zmian
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] OutcomesFinancialDocument entity)
         {
@@ -46,7 +62,6 @@ namespace DevExpress.Controllers
             return Created(entity);
         }
 
-        // PATCH: odata/OutcomesFinancialDocument(key)
         [HttpPatch]
         public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<OutcomesFinancialDocument> patch)
         {
@@ -59,7 +74,6 @@ namespace DevExpress.Controllers
             return Ok(entity);
         }
 
-        // DELETE: odata/OutcomesFinancialDocument(key)
         [HttpDelete]
         public async Task<IActionResult> Delete(Guid key)
         {

@@ -17,57 +17,70 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/Product
+        // GET: odata/Products
         [EnableQuery]
         public IActionResult Get()
         {
-            var query = _context.Set<Product>().AsQueryable();
-
+            var query = _context.Products.AsQueryable();
             return Ok(query);
         }
 
-        // GET: odata/Product(key)
+        // GET: odata/Products(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] int key)
         {
-            var entity = _context.Set<Product>().Find(key);
+            var entity = _context.Products.FirstOrDefault(p => p.ProductId == key);
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/Product
+        // POST: odata/Products
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Product entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.Set<Product>().Add(entity);
+            _context.Products.Add(entity);
             await _context.SaveChangesAsync();
             return Created(entity);
         }
 
-        // PATCH: odata/Product(key)
+        // PATCH: odata/Products(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Product> patch)
+        public async Task<IActionResult> Patch([FromRoute] int key, [FromBody] Delta<Product> patch)
         {
-            var entity = await _context.Set<Product>().FindAsync(key);
+            var entity = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == key);
             if (entity == null)
                 return NotFound();
 
-            patch.Patch(entity);
-            await _context.SaveChangesAsync();
-            return Ok(entity);
+            try
+            {
+                patch.TrySetPropertyValue(nameof(Product.ProductsBarcodes), null);
+                patch.TrySetPropertyValue(nameof(Product.ProductsRecipes), null);
+                patch.TrySetPropertyValue(nameof(Product.OrdersItems), null);
+
+                patch.Patch(entity);
+                entity.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return Ok(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Błąd podczas aktualizacji produktu: " + ex.Message);
+                return StatusCode(500, "Błąd aktualizacji produktu: " + ex.Message);
+            }
         }
 
-        // DELETE: odata/Product(key)
+        // DELETE: odata/Products(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete([FromRoute] int key)
         {
-            var entity = await _context.Set<Product>().FindAsync(key);
+            var entity = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == key);
             if (entity == null)
                 return NotFound();
 
-            _context.Set<Product>().Remove(entity);
+            _context.Products.Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

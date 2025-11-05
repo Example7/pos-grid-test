@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class SetsItem
 {
+    [Key]
     public long SetItemId { get; set; }
 
     public long SetId { get; set; }

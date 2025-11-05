@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class OrdersOperationsLog
 {
+    [Key]
     public long OrderOperationLogId { get; set; }
 
     public Guid? OrderOperationEmployeeId { get; set; }

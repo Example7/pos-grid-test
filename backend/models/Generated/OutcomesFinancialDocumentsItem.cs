@@ -9,7 +9,6 @@ namespace DevExpress.Models.Generated;
 /// </summary>
 public partial class OutcomesFinancialDocumentsItem
 {
-    [Key]
     public long ProductId { get; set; }
 
     public decimal Quantity { get; set; }
@@ -29,6 +28,7 @@ public partial class OutcomesFinancialDocumentsItem
 
     public DateTime? CreatedAt { get; set; }
 
+    [Key]
     public Guid? OutcomeFinancialDocumentId { get; set; }
 
     public Guid OutcomeFinancialDocumentItemId { get; set; }

@@ -35,33 +35,30 @@ namespace DevExpress.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(entity.Category1Name))
-                return BadRequest("Pole 'Category1Name' jest wymagane.");
-
             entity.CreatedAt = DateTime.UtcNow;
-
             _context.ProductsCategories1s.Add(entity);
             await _context.SaveChangesAsync();
+
             return Created(entity);
         }
 
         // PATCH: odata/ProductsCategories1(1)
         [HttpPatch]
-        public async Task<IActionResult> Patch(long key, [FromBody] Delta<ProductsCategories1> patch)
+        public async Task<IActionResult> Patch([FromRoute] long key, [FromBody] Delta<ProductsCategories1> patch)
         {
             var entity = await _context.ProductsCategories1s.FindAsync(key);
             if (entity == null)
                 return NotFound();
 
             patch.Patch(entity);
-
             await _context.SaveChangesAsync();
+
             return Ok(entity);
         }
 
         // DELETE: odata/ProductsCategories1(1)
         [HttpDelete]
-        public async Task<IActionResult> Delete(long key)
+        public async Task<IActionResult> Delete([FromRoute] long key)
         {
             var entity = await _context.ProductsCategories1s.FindAsync(key);
             if (entity == null)

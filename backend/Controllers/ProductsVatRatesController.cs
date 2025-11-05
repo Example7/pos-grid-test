@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.EntityFrameworkCore;
 
 namespace DevExpress.Controllers
 {
@@ -17,57 +16,71 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/ProductsVatRate
+        // GET: odata/ProductsVatRates
         [EnableQuery]
         public IActionResult Get()
         {
-            var query = _context.Set<ProductsVatRate>().AsQueryable();
-
-            return Ok(query);
+            return Ok(_context.ProductsVatRates);
         }
 
-        // GET: odata/ProductsVatRate(key)
+        // GET: odata/ProductsVatRates(1)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] long key)
         {
-            var entity = _context.Set<ProductsVatRate>().Find(key);
+            var entity = _context.ProductsVatRates
+                .FirstOrDefault(x => x.ProductVatRateId == key);
+
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/ProductsVatRate
+        // POST: odata/ProductsVatRates
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ProductsVatRate entity)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _context.Set<ProductsVatRate>().Add(entity);
+            entity.CreatedAt = DateTime.UtcNow;
+
+            _context.ProductsVatRates.Add(entity);
             await _context.SaveChangesAsync();
             return Created(entity);
         }
 
-        // PATCH: odata/ProductsVatRate(key)
+        // PATCH: odata/ProductsVatRates(1)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<ProductsVatRate> patch)
+        public async Task<IActionResult> Patch([FromRoute] long key, [FromBody] Delta<ProductsVatRate> patch)
         {
-            var entity = await _context.Set<ProductsVatRate>().FindAsync(key);
+            var entity = await _context.ProductsVatRates.FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            patch.Patch(entity);
-            await _context.SaveChangesAsync();
-            return Ok(entity);
+            try
+            {
+                // nie próbuj patchować relacji Products
+                patch.TrySetPropertyValue(nameof(ProductsVatRate.Products), null);
+
+                patch.Patch(entity);
+
+                await _context.SaveChangesAsync();
+                return Ok(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Błąd aktualizacji stawki VAT: {ex.Message}");
+                return StatusCode(500, "Błąd aktualizacji stawki VAT: " + ex.Message);
+            }
         }
 
-        // DELETE: odata/ProductsVatRate(key)
+        // DELETE: odata/ProductsVatRates(1)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete([FromRoute] long key)
         {
-            var entity = await _context.Set<ProductsVatRate>().FindAsync(key);
+            var entity = await _context.ProductsVatRates.FindAsync(key);
             if (entity == null)
                 return NotFound();
 
-            _context.Set<ProductsVatRate>().Remove(entity);
+            _context.ProductsVatRates.Remove(entity);
             await _context.SaveChangesAsync();
             return NoContent();
         }

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class StoresDocumentsType
 {
+    [Key]
     public string StoreDocumentTypeId { get; set; } = null!;
 
     public string StoreDocumentTypeName { get; set; } = null!;

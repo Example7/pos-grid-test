@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class ProductsRecipesItem
 {
+    [Key]
     public long ProductRecipeItemId { get; set; }
 
     public long ProductRecipeId { get; set; }

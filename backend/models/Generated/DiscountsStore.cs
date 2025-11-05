@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class DiscountsStore
 {
+    [Key]
     public long DiscountStoreId { get; set; }
 
     public long DiscountId { get; set; }

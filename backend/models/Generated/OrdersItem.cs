@@ -6,7 +6,6 @@ namespace DevExpress.Models.Generated;
 
 public partial class OrdersItem
 {
-    [Key]
     public long? ProductId { get; set; }
 
     public long? DiscountId { get; set; }
@@ -91,6 +90,7 @@ public partial class OrdersItem
     /// </summary>
     public Guid? OrderItemCreatedByEmployeId { get; set; }
 
+    [Key]
     public Guid OrderItemId { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

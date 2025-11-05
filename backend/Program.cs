@@ -1,5 +1,6 @@
 ﻿using DevExpress.Data;
 using DevExpress.Models.Generated;
+using DevExpress.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
@@ -66,16 +67,30 @@ IEdmModel GetEdmModel()
     // --- Produkty i powiązania ---
     modelBuilder.EntitySet<Product>("Products");
     modelBuilder.EntitySet<ProductsCategories1>("ProductsCategories1");
+    modelBuilder.EntitySet<ProductsCategory1View>("ProductsCategories1View");
     modelBuilder.EntitySet<ProductsCategories2>("ProductsCategories2");
     modelBuilder.EntitySet<ProductsQuantityUnit>("ProductsQuantityUnits");
     modelBuilder.EntitySet<ProductsVatRate>("ProductsVatRates");
+    modelBuilder.EntitySet<ProductsBarcode>("ProductsBarcodes");
+    modelBuilder.EntitySet<ProductsRecipe>("ProductsRecipes");
+    modelBuilder.EntitySet<ProductsRecipesItem>("ProductsRecipesItems");
+
+    // --- Rabaty ---
+    modelBuilder.EntitySet<Discount>("Discounts");
+    modelBuilder.EntitySet<DiscountsProduct>("DiscountsProducts");
+    modelBuilder.EntitySet<DiscountsStore>("DiscountsStores");
 
     // --- Zamówienia ---
     modelBuilder.EntitySet<Order>("Orders");
     modelBuilder.EntitySet<OrdersItem>("OrdersItems");
+    modelBuilder.EntitySet<OrdersInvoice>("OrdersInvoices");
+    modelBuilder.EntitySet<OrdersInvoicesType>("OrdersInvoicesTypes");
     modelBuilder.EntitySet<OrdersPaymentsStatus>("OrdersPaymentsStatuses");
     modelBuilder.EntitySet<OrdersRealizationsStatus>("OrdersRealizationsStatuses");
     modelBuilder.EntitySet<OrdersRealizationsType>("OrdersRealizationsTypes");
+    modelBuilder.EntitySet<OrdersVatSummary>("OrdersVatSummarys");
+    modelBuilder.EntitySet<OrdersOperationsLog>("OrdersOperationsLogs");
+    modelBuilder.EntitySet<OrdersItemsOperationsLog>("OrdersItemsOperationsLogs");
 
     // --- Finanse / sprzedaż ---
     modelBuilder.EntitySet<Outcome>("Outcomes");
@@ -85,23 +100,44 @@ IEdmModel GetEdmModel()
     modelBuilder.EntitySet<OutcomesFinancialDocumentsItem>("OutcomesFinancialDocumentsItems");
     modelBuilder.EntitySet<OutcomesFinancialDocumentsStatus>("OutcomesFinancialDocumentsStatuses");
     modelBuilder.EntitySet<OutcomesFinancialDocumentsVatSummary>("OutcomesFinancialDocumentsVatSummaries");
+    modelBuilder.EntitySet<FinancialDocumentsType>("FinancialDocumentsTypes");
 
-    // --- Sklepy, magazyny, POS ---
+    // --- Magazyn i dostawy ---
+    modelBuilder.EntitySet<Stock>("Stocks");
+    modelBuilder.EntitySet<StockHistory>("StockHistorys");
+    modelBuilder.EntitySet<Inorder>("Inorders");
+    modelBuilder.EntitySet<InordersItem>("InordersItems");
+
+    // --- Sklepy, POS, zestawy ---
     modelBuilder.EntitySet<Shop>("Shops");
     modelBuilder.EntitySet<Store>("Stores");
+    modelBuilder.EntitySet<StoresDocumentsType>("StoresDocumentsTypes");
+    modelBuilder.EntitySet<StoresOrdersType>("StoresOrdersTypes");
+    modelBuilder.EntitySet<StoresDocumentsTypesCategory>("StoresDocumentsTypesCategorys");
     modelBuilder.EntitySet<Pose>("Poses");
     modelBuilder.EntitySet<PosesType>("PosesTypes");
+    modelBuilder.EntitySet<Set>("Sets");
+    modelBuilder.EntitySet<SetsItem>("SetsItems");
+    modelBuilder.EntitySet<SetsItemsProduct>("SetsItemsProducts");
+    modelBuilder.EntitySet<SetsCategory>("SetsCategorys");
+    modelBuilder.EntitySet<SetsSchedule>("SetsSchedules");
+    modelBuilder.EntitySet<ShopsSet>("ShopsSets");
 
     // --- Pracownicy i kontrahenci ---
     modelBuilder.EntitySet<Employee>("Employees");
     modelBuilder.EntitySet<Contractor>("Contractors");
     modelBuilder.EntitySet<Country>("Countries");
+    modelBuilder.EntitySet<LoyaltiesWallet>("LoyaltiesWallets");
 
-    // --- Metody płatności ---
+    // --- Płatności i słowniki ---
     modelBuilder.EntitySet<PaymentsMethod>("PaymentsMethods");
+    modelBuilder.EntitySet<Year>("Years");
+    modelBuilder.EntitySet<SyncVersion>("SyncVersions");
+    modelBuilder.EntitySet<UserContext>("UserContexts");
 
     return modelBuilder.GetEdmModel();
 }
+
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 ﻿using DevExpress.Data;
 using DevExpress.Models.Generated;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Deltas;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
@@ -17,24 +18,23 @@ namespace DevExpress.Controllers
             _context = context;
         }
 
-        // GET: odata/StoresDocumentsType
+        // GET: odata/StoresDocumentsTypes
         [EnableQuery]
         public IActionResult Get()
         {
             var query = _context.Set<StoresDocumentsType>().AsQueryable();
-
             return Ok(query);
         }
 
-        // GET: odata/StoresDocumentsType(key)
+        // GET: odata/StoresDocumentsTypes(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromODataUri] string key)
         {
             var entity = _context.Set<StoresDocumentsType>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
         }
 
-        // POST: odata/StoresDocumentsType
+        // POST: odata/StoresDocumentsTypes
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] StoresDocumentsType entity)
         {
@@ -46,9 +46,9 @@ namespace DevExpress.Controllers
             return Created(entity);
         }
 
-        // PATCH: odata/StoresDocumentsType(key)
+        // PATCH: odata/StoresDocumentsTypes(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<StoresDocumentsType> patch)
+        public async Task<IActionResult> Patch([FromODataUri] string key, [FromBody] Delta<StoresDocumentsType> patch)
         {
             var entity = await _context.Set<StoresDocumentsType>().FindAsync(key);
             if (entity == null)
@@ -59,9 +59,9 @@ namespace DevExpress.Controllers
             return Ok(entity);
         }
 
-        // DELETE: odata/StoresDocumentsType(key)
+        // DELETE: odata/StoresDocumentsTypes(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete([FromODataUri] string key)
         {
             var entity = await _context.Set<StoresDocumentsType>().FindAsync(key);
             if (entity == null)

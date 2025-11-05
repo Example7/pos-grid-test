@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class ProductsBarcode
 {
+    [Key]
     public long ProductBarcodeId { get; set; }
 
     public long ProductId { get; set; }

@@ -28,7 +28,7 @@ namespace DevExpress.Controllers
 
         // GET: odata/Store(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] long key)
         {
             var entity = _context.Set<Store>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
@@ -48,7 +48,7 @@ namespace DevExpress.Controllers
 
         // PATCH: odata/Store(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<Store> patch)
+        public async Task<IActionResult> Patch(long key, [FromBody] Delta<Store> patch)
         {
             var entity = await _context.Set<Store>().FindAsync(key);
             if (entity == null)
@@ -61,7 +61,7 @@ namespace DevExpress.Controllers
 
         // DELETE: odata/Store(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete(long key)
         {
             var entity = await _context.Set<Store>().FindAsync(key);
             if (entity == null)

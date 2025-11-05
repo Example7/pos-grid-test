@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class OrdersVatSummary
 {
+    [Key]
     public long OrderVatSummaryId { get; set; }
 
     public long? ProductVatRateId { get; set; }

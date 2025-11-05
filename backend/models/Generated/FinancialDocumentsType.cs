@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevExpress.Models.Generated;
 
 public partial class FinancialDocumentsType
 {
+    [Key]
     public long FinancialDocumentTypeId { get; set; }
 
     public string TypeCode { get; set; } = null!;
