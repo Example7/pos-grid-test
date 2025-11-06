@@ -16,11 +16,28 @@ import CustomStore from "devextreme/data/custom_store";
 
 type DevExpressGridProps = {
   apiUrl: string;
-  readUrl?: string; // ← nowy parametr
+  readUrl?: string;
   title: string;
   keyExpr?: string;
   columns: ReactNode;
 };
+
+function formatODataKey(key: any) {
+  if (
+    typeof key === "string" &&
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+      key
+    )
+  ) {
+    return key;
+  }
+
+  if (typeof key === "string") {
+    return `'${key}'`;
+  }
+
+  return key;
+}
 
 export default function DevExpressGrid({
   apiUrl,
@@ -132,7 +149,7 @@ export default function DevExpressGrid({
     },
 
     update: async (key, values) => {
-      const res = await fetch(`${apiUrl}(${key})`, {
+      const res = await fetch(`${apiUrl}(${formatODataKey(key)})`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -141,7 +158,9 @@ export default function DevExpressGrid({
     },
 
     remove: async (key) => {
-      const res = await fetch(`${apiUrl}(${key})`, { method: "DELETE" });
+      const res = await fetch(`${apiUrl}(${formatODataKey(key)})`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error(`Błąd usuwania: ${res.status}`);
     },
   });

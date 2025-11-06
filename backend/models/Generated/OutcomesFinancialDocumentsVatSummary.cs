@@ -9,7 +9,6 @@ namespace DevExpress.Models.Generated;
 /// </summary>
 public partial class OutcomesFinancialDocumentsVatSummary
 {
-    [Key]
     public long ProductVatRateId { get; set; }
 
     public decimal? FinancialDocumentSummaryGrossValue { get; set; }
@@ -22,6 +21,7 @@ public partial class OutcomesFinancialDocumentsVatSummary
 
     public Guid? OutcomeFinancialDocumentId { get; set; }
 
+    [Key]
     public Guid OutcomeFinancialDocumentVatSummaryId { get; set; }
 
     /// <summary>

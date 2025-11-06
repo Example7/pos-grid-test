@@ -28,7 +28,7 @@ namespace DevExpress.Controllers
 
         // GET: odata/PaymentsMethod(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] long key)
         {
             var entity = _context.Set<PaymentsMethod>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
@@ -48,7 +48,7 @@ namespace DevExpress.Controllers
 
         // PATCH: odata/PaymentsMethod(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<PaymentsMethod> patch)
+        public async Task<IActionResult> Patch(long key, [FromBody] Delta<PaymentsMethod> patch)
         {
             var entity = await _context.Set<PaymentsMethod>().FindAsync(key);
             if (entity == null)
@@ -61,7 +61,7 @@ namespace DevExpress.Controllers
 
         // DELETE: odata/PaymentsMethod(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete(long key)
         {
             var entity = await _context.Set<PaymentsMethod>().FindAsync(key);
             if (entity == null)

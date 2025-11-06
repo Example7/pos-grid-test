@@ -1,6 +1,6 @@
 "use client";
 
-import { Column, RequiredRule, NumericRule } from "devextreme-react/data-grid";
+import { Column, RequiredRule } from "devextreme-react/data-grid";
 import DevExpressGrid from "./DevExpress";
 import CustomStore from "devextreme/data/custom_store";
 
@@ -48,6 +48,12 @@ export default function StockGrid() {
       columns={
         <>
           <Column
+            dataField="StockId"
+            caption="ID"
+            allowEditing={false}
+            width={70}
+          />
+          <Column
             dataField="StoreId"
             caption="Magazyn"
             lookup={{
@@ -88,15 +94,15 @@ export default function StockGrid() {
             dataField="StockTotalQuantity"
             caption="Stan całkowity"
             dataType="number"
+            allowEditing={false}
             width={160}
-          >
-            <NumericRule message="Wartość musi być liczbą" />
-          </Column>
+          ></Column>
 
           <Column
             dataField="StockAvailableQuantity"
             caption="Stan dostępny"
             dataType="number"
+            allowEditing={false}
             width={160}
           />
 

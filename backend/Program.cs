@@ -88,7 +88,7 @@ IEdmModel GetEdmModel()
     modelBuilder.EntitySet<OrdersPaymentsStatus>("OrdersPaymentsStatuses");
     modelBuilder.EntitySet<OrdersRealizationsStatus>("OrdersRealizationsStatuses");
     modelBuilder.EntitySet<OrdersRealizationsType>("OrdersRealizationsTypes");
-    modelBuilder.EntitySet<OrdersVatSummary>("OrdersVatSummarys");
+    modelBuilder.EntitySet<OrdersVatSummary>("OrdersVatSummaries");
     modelBuilder.EntitySet<OrdersOperationsLog>("OrdersOperationsLogs");
     modelBuilder.EntitySet<OrdersItemsOperationsLog>("OrdersItemsOperationsLogs");
 

@@ -28,7 +28,7 @@ namespace DevExpress.Controllers
 
         // GET: odata/StockHistory(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] long key)
         {
             var entity = _context.Set<StockHistory>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
@@ -48,7 +48,7 @@ namespace DevExpress.Controllers
 
         // PATCH: odata/StockHistory(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<StockHistory> patch)
+        public async Task<IActionResult> Patch(long key, [FromBody] Delta<StockHistory> patch)
         {
             var entity = await _context.Set<StockHistory>().FindAsync(key);
             if (entity == null)
@@ -61,7 +61,7 @@ namespace DevExpress.Controllers
 
         // DELETE: odata/StockHistory(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete(long key)
         {
             var entity = await _context.Set<StockHistory>().FindAsync(key);
             if (entity == null)

@@ -28,7 +28,7 @@ namespace DevExpress.Controllers
 
         // GET: odata/StoresDocumentsTypesCategory(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] string key)
         {
             var entity = _context.Set<StoresDocumentsTypesCategory>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
@@ -48,7 +48,7 @@ namespace DevExpress.Controllers
 
         // PATCH: odata/StoresDocumentsTypesCategory(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<StoresDocumentsTypesCategory> patch)
+        public async Task<IActionResult> Patch(string key, [FromBody] Delta<StoresDocumentsTypesCategory> patch)
         {
             var entity = await _context.Set<StoresDocumentsTypesCategory>().FindAsync(key);
             if (entity == null)
@@ -61,7 +61,7 @@ namespace DevExpress.Controllers
 
         // DELETE: odata/StoresDocumentsTypesCategory(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete(string key)
         {
             var entity = await _context.Set<StoresDocumentsTypesCategory>().FindAsync(key);
             if (entity == null)

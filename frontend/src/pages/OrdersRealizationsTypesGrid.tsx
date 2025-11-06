@@ -8,12 +8,14 @@ import {
 import DevExpressGrid from "./DevExpress";
 
 export default function OrdersRealizationsTypesGrid() {
-  const apiUrl =
+  const apiUrl = "http://localhost:5135/odata/OrdersRealizationsTypes";
+  const readUrl =
     "http://localhost:5135/odata/OrdersRealizationsTypes?$expand=Orders";
 
   return (
     <DevExpressGrid
       apiUrl={apiUrl}
+      readUrl={readUrl}
       title="Typy realizacji zamówień"
       keyExpr="OrderRealizationTypeId"
       columns={

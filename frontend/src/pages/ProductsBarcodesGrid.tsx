@@ -10,9 +10,10 @@ import DevExpressGrid from "./DevExpress";
 import CustomStore from "devextreme/data/custom_store";
 
 export default function ProductsBarcodesGrid() {
-  const apiUrl = "http://localhost:5135/odata/ProductsBarcodes?$expand=Product";
+  const readUrl =
+    "http://localhost:5135/odata/ProductsBarcodes?$expand=Product";
+  const apiUrl = "http://localhost:5135/odata/ProductsBarcodes";
 
-  // lookup z produktami
   const productsStore = new CustomStore({
     key: "ProductId",
     loadMode: "raw",
@@ -27,6 +28,7 @@ export default function ProductsBarcodesGrid() {
   return (
     <DevExpressGrid
       apiUrl={apiUrl}
+      readUrl={readUrl}
       title="Kody kreskowe produktów"
       keyExpr="ProductBarcodeId"
       columns={

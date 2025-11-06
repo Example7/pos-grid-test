@@ -28,7 +28,7 @@ namespace DevExpress.Controllers
 
         // GET: odata/SyncVersion(key)
         [EnableQuery]
-        public IActionResult Get([FromRoute] Guid key)
+        public IActionResult Get([FromRoute] long key)
         {
             var entity = _context.Set<SyncVersion>().Find(key);
             return entity == null ? NotFound() : Ok(entity);
@@ -48,7 +48,7 @@ namespace DevExpress.Controllers
 
         // PATCH: odata/SyncVersion(key)
         [HttpPatch]
-        public async Task<IActionResult> Patch(Guid key, [FromBody] Delta<SyncVersion> patch)
+        public async Task<IActionResult> Patch(long key, [FromBody] Delta<SyncVersion> patch)
         {
             var entity = await _context.Set<SyncVersion>().FindAsync(key);
             if (entity == null)
@@ -61,7 +61,7 @@ namespace DevExpress.Controllers
 
         // DELETE: odata/SyncVersion(key)
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid key)
+        public async Task<IActionResult> Delete(long key)
         {
             var entity = await _context.Set<SyncVersion>().FindAsync(key);
             if (entity == null)

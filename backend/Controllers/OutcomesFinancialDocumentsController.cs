@@ -23,7 +23,7 @@ namespace DevExpress.Controllers
         {
             var query = _context.OutcomesFinancialDocuments
                 .Include(d => d.OutcomesFinancialDocumentsItems)
-                    .ThenInclude(i => i.Product)              // jeśli w Items jest nawigacja Product
+                    .ThenInclude(i => i.Product)
                 .Include(d => d.OutcomesFinancialDocumentsVatSummaries)
                 .Include(d => d.FinancialDocumentType)
                 .Include(d => d.FinancialDocumentStatus)
@@ -40,7 +40,7 @@ namespace DevExpress.Controllers
             var query = _context.OutcomesFinancialDocuments
                 .Where(d => d.OutcomeFinancialDocumentId == key)
                 .Include(d => d.OutcomesFinancialDocumentsItems)
-                    .ThenInclude(i => i.Product)              // jw.
+                    .ThenInclude(i => i.Product)
                 .Include(d => d.OutcomesFinancialDocumentsVatSummaries)
                 .Include(d => d.FinancialDocumentType)
                 .Include(d => d.FinancialDocumentStatus)
@@ -50,7 +50,6 @@ namespace DevExpress.Controllers
             return Ok(query);
         }
 
-        // POST, PATCH, DELETE bez zmian
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] OutcomesFinancialDocument entity)
         {

@@ -8,11 +8,13 @@ import {
 import DevExpressGrid from "./DevExpress";
 
 export default function PaymentsMethodsGrid() {
-  const apiUrl = "http://localhost:5135/odata/PaymentsMethods?$expand=Orders";
+  const apiUrl = "http://localhost:5135/odata/PaymentsMethods";
+  const readUrl = "http://localhost:5135/odata/PaymentsMethods?$expand=Orders";
 
   return (
     <DevExpressGrid
       apiUrl={apiUrl}
+      readUrl={readUrl}
       title="Metody płatności"
       keyExpr="PaymentMethodId"
       columns={
